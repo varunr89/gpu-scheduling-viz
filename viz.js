@@ -24,6 +24,9 @@ class Controller {
         this.model.onChange((event, data) => this._onModelChange(event, data));
 
         console.log('GPU Scheduling Visualizer loaded');
+
+        // Auto-load default demo data if available
+        this._loadDefaultData();
     }
 
     _cacheElements() {
@@ -186,54 +189,64 @@ class Controller {
         if (!file) return;
 
         try {
-            // Read entire file into ArrayBuffer (local file, no range requests)
             const arrayBuffer = await file.arrayBuffer();
-            this.buffers[simIndex] = arrayBuffer;
-
-            // Decode header
-            const header = decodeHeader(arrayBuffer);
-
-            // Decode config JSON (extends from configJsonOffset to jobMetadataOffset)
-            const config = decodeConfigJson(
-                arrayBuffer,
-                header.configJsonOffset,
-                header.jobMetadataOffset
-            );
-
-            // Decode job metadata
-            const jobs = decodeJobs(arrayBuffer, header.jobMetadataOffset, header.numJobs);
-
-            // Create decoder
-            const decoder = new Decoder(header, config);
-
-            // Decode all rounds from the buffer
-            const roundCount = header.numRounds;
-            const rounds = decoder.decodeRounds(
-                arrayBuffer,
-                header.roundsOffset,
-                roundCount
-            );
-            this.roundsData[simIndex] = rounds;
-
-            // Decode queue index if present
-            if (header.indexOffset > 0 && header.queueOffset > 0) {
-                this.queueIndices[simIndex] = decoder.decodeQueueIndex(
-                    arrayBuffer,
-                    header.indexOffset,
-                    header.numRounds
-                );
-            }
-
-            // Create a DataSource (for potential HTTP use later)
-            const blobUrl = URL.createObjectURL(file);
-            const dataSource = new DataSource(blobUrl);
-
-            // Load into model
-            this.model.loadSimulation(simIndex, {
-                header, config, dataSource, decoder, jobs
-            });
+            this._loadFromBuffer(simIndex, arrayBuffer);
         } catch (err) {
             console.error(`Failed to load simulation ${simIndex + 1}:`, err);
+        }
+    }
+
+    _loadFromBuffer(simIndex, arrayBuffer) {
+        this.buffers[simIndex] = arrayBuffer;
+
+        const header = decodeHeader(arrayBuffer);
+        const config = decodeConfigJson(
+            arrayBuffer,
+            header.configJsonOffset,
+            header.jobMetadataOffset
+        );
+        const jobs = decodeJobs(arrayBuffer, header.jobMetadataOffset, header.numJobs);
+        const decoder = new Decoder(header, config);
+
+        const rounds = decoder.decodeRounds(
+            arrayBuffer,
+            header.roundsOffset,
+            header.numRounds
+        );
+        this.roundsData[simIndex] = rounds;
+
+        if (header.indexOffset > 0 && header.queueOffset > 0) {
+            this.queueIndices[simIndex] = decoder.decodeQueueIndex(
+                arrayBuffer,
+                header.indexOffset,
+                header.numRounds
+            );
+        }
+
+        const blob = new Blob([arrayBuffer]);
+        const blobUrl = URL.createObjectURL(blob);
+        const dataSource = new DataSource(blobUrl);
+
+        this.model.loadSimulation(simIndex, {
+            header, config, dataSource, decoder, jobs
+        });
+    }
+
+    async _loadDefaultData() {
+        const defaults = [
+            'data/fig10_perf_high.viz.bin',
+            'data/fig10_mmf_high.viz.bin'
+        ];
+        for (let i = 0; i < defaults.length; i++) {
+            try {
+                const resp = await fetch(defaults[i]);
+                if (!resp.ok) continue;
+                const arrayBuffer = await resp.arrayBuffer();
+                this._loadFromBuffer(i, arrayBuffer);
+                console.log(`Auto-loaded ${defaults[i]}`);
+            } catch (err) {
+                console.warn(`Could not auto-load ${defaults[i]}:`, err.message);
+            }
         }
     }
 

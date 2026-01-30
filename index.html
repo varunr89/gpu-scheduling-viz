@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GPU Scheduling Visualizer</title>
+  <link rel="stylesheet" href="viz.css">
+</head>
+<body>
+  <!-- Header -->
+  <header id="header">
+    <div class="header-left">
+      <h1>GPU Scheduling Visualizer</h1>
+    </div>
+    <div class="header-files">
+      <div class="file-picker">
+        <label for="file-input-1">Simulation 1:</label>
+        <input type="file" id="file-input-1" accept=".bin">
+      </div>
+      <div class="file-picker">
+        <label for="file-input-2">Simulation 2:</label>
+        <input type="file" id="file-input-2" accept=".bin">
+      </div>
+    </div>
+    <div class="header-controls">
+      <div class="playback-controls">
+        <button id="btn-first" class="playback-btn" title="First frame">&#x23EE;</button>
+        <button id="btn-prev" class="playback-btn" title="Previous frame">&#x23F4;</button>
+        <button id="btn-play" class="playback-btn play-btn" title="Play/Pause">&#x25B6;</button>
+        <button id="btn-next" class="playback-btn" title="Next frame">&#x23F5;</button>
+        <button id="btn-last" class="playback-btn" title="Last frame">&#x23ED;</button>
+      </div>
+      <div class="speed-selector">
+        <label for="speed-select">Speed:</label>
+        <select id="speed-select">
+          <option value="0.25">0.25x</option>
+          <option value="0.5">0.5x</option>
+          <option value="1" selected>1x</option>
+          <option value="2">2x</option>
+          <option value="5">5x</option>
+          <option value="10">10x</option>
+        </select>
+      </div>
+    </div>
+  </header>
+
+  <!-- Timeline Scrubber -->
+  <section id="timeline-section">
+    <div class="timeline-container">
+      <div class="phase-markers">
+        <span class="phase-marker phase-warmup">Warmup</span>
+        <span class="phase-marker phase-measurement">Measurement</span>
+        <span class="phase-marker phase-cooldown">Cooldown</span>
+      </div>
+      <input type="range" id="timeline-scrubber" min="0" max="100" value="0" step="1">
+      <div class="timeline-labels">
+        <span id="timeline-current">0</span>
+        <span id="timeline-total">/ 0</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Charts Section -->
+  <section id="charts-section" class="sim-section" hidden>
+    <div class="charts-header">
+      <h2 class="sim-title">Comparison</h2>
+      <div class="chart-view-controls">
+        <label class="chart-view-option">
+          <input type="radio" name="chart-view" value="all" checked> All
+        </label>
+        <label class="chart-view-option">
+          <input type="radio" name="chart-view" value="rolling"> Rolling
+        </label>
+        <div id="rolling-window-controls" class="rolling-window-controls" hidden>
+          <input type="number" id="rolling-window-size" value="100" min="10" max="10000" step="10">
+          <span class="rolling-window-unit">rounds</span>
+        </div>
+        <div class="rolling-window-controls">
+          <span class="rolling-window-unit">PDF last</span>
+          <input type="number" id="pdf-window-size" value="1000" min="10" max="100000" step="100">
+          <span class="rolling-window-unit">jobs</span>
+        </div>
+      </div>
+    </div>
+    <div class="charts-row">
+      <div class="chart-container">
+        <canvas id="chart-utilization" width="570" height="200"></canvas>
+      </div>
+      <div class="chart-container">
+        <canvas id="chart-jct" width="570" height="200"></canvas>
+      </div>
+      <div class="chart-container">
+        <canvas id="chart-queue" width="570" height="200"></canvas>
+      </div>
+      <div class="chart-container">
+        <canvas id="chart-jct-pdf" width="570" height="200"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- Simulation 1 -->
+  <section id="sim-1" class="sim-section">
+    <h2 class="sim-title">Simulation 1</h2>
+    <div class="canvas-container">
+      <canvas id="gpu-canvas-1" width="1200" height="400"></canvas>
+    </div>
+    <div class="metrics-bar">
+      <div class="metric-col">
+        <div class="metric-headline">
+          <span class="metric-label">Utilization</span>
+          <span id="metric-util-1" class="metric-value">--</span>
+        </div>
+        <div class="metric-breakdown" id="metric-util-breakdown-1"></div>
+      </div>
+      <div class="metric-col">
+        <div class="metric-headline">
+          <span class="metric-label">Running</span>
+          <span id="metric-running-1" class="metric-value">--</span>
+        </div>
+        <div class="metric-breakdown" id="metric-running-breakdown-1"></div>
+      </div>
+      <div class="metric-col">
+        <div class="metric-headline">
+          <span class="metric-label">Queued</span>
+          <span id="metric-queued-1" class="metric-value">--</span>
+        </div>
+        <div class="metric-breakdown" id="metric-queued-breakdown-1"></div>
+      </div>
+      <div class="metric-col">
+        <div class="metric-headline">
+          <span class="metric-label">Completed</span>
+          <span id="metric-completed-1" class="metric-value">--</span>
+        </div>
+        <div class="metric-sub-row">
+          <span class="metric-sub-label">Avg JCT</span>
+          <span id="metric-jct-1" class="metric-sub-value">--</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Simulation 2 (initially hidden) -->
+  <section id="sim-2" class="sim-section" hidden>
+    <h2 class="sim-title">Simulation 2</h2>
+    <div class="canvas-container">
+      <canvas id="gpu-canvas-2" width="1200" height="400"></canvas>
+    </div>
+    <div class="metrics-bar">
+      <div class="metric-col">
+        <div class="metric-headline">
+          <span class="metric-label">Utilization</span>
+          <span id="metric-util-2" class="metric-value">--</span>
+        </div>
+        <div class="metric-breakdown" id="metric-util-breakdown-2"></div>
+      </div>
+      <div class="metric-col">
+        <div class="metric-headline">
+          <span class="metric-label">Running</span>
+          <span id="metric-running-2" class="metric-value">--</span>
+        </div>
+        <div class="metric-breakdown" id="metric-running-breakdown-2"></div>
+      </div>
+      <div class="metric-col">
+        <div class="metric-headline">
+          <span class="metric-label">Queued</span>
+          <span id="metric-queued-2" class="metric-value">--</span>
+        </div>
+        <div class="metric-breakdown" id="metric-queued-breakdown-2"></div>
+      </div>
+      <div class="metric-col">
+        <div class="metric-headline">
+          <span class="metric-label">Completed</span>
+          <span id="metric-completed-2" class="metric-value">--</span>
+        </div>
+        <div class="metric-sub-row">
+          <span class="metric-sub-label">Avg JCT</span>
+          <span id="metric-jct-2" class="metric-sub-value">--</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Queue Panels -->
+  <section id="queue-section">
+    <div class="queue-panels">
+      <div class="queue-panel" id="queue-panel-1">
+        <h3>Queue - Simulation 1</h3>
+        <ul id="queue-list-1" class="queue-list"></ul>
+      </div>
+      <div class="queue-panel" id="queue-panel-2">
+        <h3>Queue - Simulation 2</h3>
+        <ul id="queue-list-2" class="queue-list"></ul>
+      </div>
+    </div>
+  </section>
+
+  <script type="module" src="viz.js"></script>
+</body>
+</html>

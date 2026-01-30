@@ -234,8 +234,8 @@ class Controller {
 
     async _loadDefaultData() {
         const defaults = [
-            'data/fig10_perf_high.viz.bin',
-            'data/fig10_mmf_high.viz.bin'
+            'data/fig9_perf_high.viz.bin',
+            'data/fig9_mmf_high.viz.bin'
         ];
         for (let i = 0; i < defaults.length; i++) {
             try {

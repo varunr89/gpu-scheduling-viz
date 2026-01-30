@@ -266,6 +266,12 @@ class Controller {
                 console.warn(`Could not auto-load ${defaults[i]}:`, err.message);
             }
         }
+
+        // Start at the beginning of the measurement phase
+        const maxRounds = this.model.getMaxRounds();
+        if (maxRounds > 6700) {
+            this.model.setCurrentRound(6700);
+        }
     }
 
     _onModelChange(event, data) {

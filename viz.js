@@ -154,10 +154,28 @@ class Controller {
             this._updatePDFChart();
         });
 
+        // Help modal
+        const helpModal = document.getElementById('help-modal');
+        const btnHelp = document.getElementById('btn-help');
+        const modalClose = document.getElementById('modal-close');
+
+        btnHelp.addEventListener('click', () => { helpModal.hidden = false; });
+        modalClose.addEventListener('click', () => { helpModal.hidden = true; });
+        helpModal.addEventListener('click', (e) => {
+            if (e.target === helpModal) helpModal.hidden = true;
+        });
+
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
-            // Ignore if user is typing in an input
+            // Close modal on Escape
+            if (e.code === 'Escape' && !helpModal.hidden) {
+                helpModal.hidden = true;
+                return;
+            }
+
+            // Ignore if user is typing in an input or modal is open
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+            if (!helpModal.hidden) return;
 
             switch (e.code) {
                 case 'Space':

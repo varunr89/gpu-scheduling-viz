@@ -1,0 +1,410 @@
+[
+  {
+    "file": "fgd_alibaba_baseline_strided_60jph_s0.viz.bin",
+    "label": "Baseline Strided 60jph s0",
+    "tags": [
+      "alibaba",
+      "baseline",
+      "strided",
+      "60jph",
+      "seed0"
+    ],
+    "rounds": 5114,
+    "complete": true
+  },
+  {
+    "file": "fgd_alibaba_baseline_strided_60jph_s1.viz.bin",
+    "label": "Baseline Strided 60jph s1",
+    "tags": [
+      "alibaba",
+      "baseline",
+      "strided",
+      "60jph",
+      "seed1"
+    ],
+    "rounds": 5291,
+    "complete": true
+  },
+  {
+    "file": "fgd_alibaba_baseline_strided_60jph_s2.viz.bin",
+    "label": "Baseline Strided 60jph s2",
+    "tags": [
+      "alibaba",
+      "baseline",
+      "strided",
+      "60jph",
+      "seed2"
+    ],
+    "rounds": 5368,
+    "complete": true
+  },
+  {
+    "file": "fgd_alibaba_gavel_strided_60jph_s0.viz.bin",
+    "label": "Gavel Strided 60jph s0",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "strided",
+      "60jph",
+      "seed0"
+    ],
+    "rounds": 5342,
+    "complete": true
+  },
+  {
+    "file": "fgd_alibaba_gavel_strided_60jph_s1.viz.bin",
+    "label": "Gavel Strided 60jph s1",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "strided",
+      "60jph",
+      "seed1"
+    ],
+    "rounds": 168,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_gavel_strided_60jph_s2.viz.bin",
+    "label": "Gavel Strided 60jph s2",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "strided",
+      "60jph",
+      "seed2"
+    ],
+    "rounds": 175,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_gavel_random_60jph_s0.viz.bin",
+    "label": "Gavel Random 60jph s0",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "random",
+      "60jph",
+      "seed0"
+    ],
+    "rounds": 133,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_gavel_random_60jph_s1.viz.bin",
+    "label": "Gavel Random 60jph s1",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "random",
+      "60jph",
+      "seed1"
+    ],
+    "rounds": 189,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_gavel_random_60jph_s2.viz.bin",
+    "label": "Gavel Random 60jph s2",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "random",
+      "60jph",
+      "seed2"
+    ],
+    "rounds": 210,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_gavel_fgd_60jph_s0.viz.bin",
+    "label": "Gavel+FGD 60jph s0",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "fgd",
+      "60jph",
+      "seed0"
+    ],
+    "rounds": 4920,
+    "complete": true
+  },
+  {
+    "file": "fgd_fifo_fgd_placement.viz.bin",
+    "label": "FIFO + FGD Placement",
+    "tags": [
+      "philly",
+      "fifo",
+      "fgd"
+    ],
+    "rounds": 6618,
+    "complete": true
+  },
+  {
+    "file": "fgd_fifo_random_placement.viz.bin",
+    "label": "FIFO + Random Placement",
+    "tags": [
+      "philly",
+      "fifo",
+      "random"
+    ],
+    "rounds": 6618,
+    "complete": true
+  },
+  {
+    "file": "fig9_perf_high.viz.bin",
+    "label": "Fig9 Gavel High",
+    "tags": [
+      "philly",
+      "gavel",
+      "paper",
+      "fig9",
+      "high-load"
+    ],
+    "rounds": 16718,
+    "complete": true
+  },
+  {
+    "file": "fig9_perf_mid.viz.bin",
+    "label": "Fig9 Gavel Mid",
+    "tags": [
+      "philly",
+      "gavel",
+      "paper",
+      "fig9",
+      "mid-load"
+    ],
+    "rounds": 16425,
+    "complete": true
+  },
+  {
+    "file": "fig9_perf_low.viz.bin",
+    "label": "Fig9 Gavel Low",
+    "tags": [
+      "philly",
+      "gavel",
+      "paper",
+      "fig9",
+      "low-load"
+    ],
+    "rounds": 20003,
+    "complete": true
+  },
+  {
+    "file": "fig9_mmf_high.viz.bin",
+    "label": "Fig9 Baseline High",
+    "tags": [
+      "philly",
+      "baseline",
+      "paper",
+      "fig9",
+      "high-load"
+    ],
+    "rounds": 20003,
+    "complete": true
+  },
+  {
+    "file": "fig9_mmf_mid.viz.bin",
+    "label": "Fig9 Baseline Mid",
+    "tags": [
+      "philly",
+      "baseline",
+      "paper",
+      "fig9",
+      "mid-load"
+    ],
+    "rounds": 17094,
+    "complete": true
+  },
+  {
+    "file": "fig9_mmf_low.viz.bin",
+    "label": "Fig9 Baseline Low",
+    "tags": [
+      "philly",
+      "baseline",
+      "paper",
+      "fig9",
+      "low-load"
+    ],
+    "rounds": 20003,
+    "complete": true
+  },
+  {
+    "file": "fig10_perf_high.viz.bin",
+    "label": "Fig10 Gavel High",
+    "tags": [
+      "philly",
+      "gavel",
+      "paper",
+      "fig10",
+      "high-load"
+    ],
+    "rounds": 20003,
+    "complete": true
+  },
+  {
+    "file": "fig10_perf_mid.viz.bin",
+    "label": "Fig10 Gavel Mid",
+    "tags": [
+      "philly",
+      "gavel",
+      "paper",
+      "fig10",
+      "mid-load"
+    ],
+    "rounds": 20003,
+    "complete": true
+  },
+  {
+    "file": "fig10_perf_low.viz.bin",
+    "label": "Fig10 Gavel Low",
+    "tags": [
+      "philly",
+      "gavel",
+      "paper",
+      "fig10",
+      "low-load"
+    ],
+    "rounds": 20003,
+    "complete": true
+  },
+  {
+    "file": "fig10_mmf_high.viz.bin",
+    "label": "Fig10 Baseline High",
+    "tags": [
+      "philly",
+      "baseline",
+      "paper",
+      "fig10",
+      "high-load"
+    ],
+    "rounds": 20003,
+    "complete": true
+  },
+  {
+    "file": "fig10_mmf_mid.viz.bin",
+    "label": "Fig10 Baseline Mid",
+    "tags": [
+      "philly",
+      "baseline",
+      "paper",
+      "fig10",
+      "mid-load"
+    ],
+    "rounds": 20003,
+    "complete": true
+  },
+  {
+    "file": "fig10_mmf_low.viz.bin",
+    "label": "Fig10 Baseline Low",
+    "tags": [
+      "philly",
+      "baseline",
+      "paper",
+      "fig10",
+      "low-load"
+    ],
+    "rounds": 20003,
+    "complete": true
+  },
+  {
+    "file": "fig11_perf_high.viz.bin",
+    "label": "Fig11 Gavel High",
+    "tags": [
+      "philly",
+      "gavel",
+      "paper",
+      "fig11",
+      "high-load"
+    ],
+    "rounds": 11676,
+    "complete": true
+  },
+  {
+    "file": "fig11_perf_mid.viz.bin",
+    "label": "Fig11 Gavel Mid",
+    "tags": [
+      "philly",
+      "gavel",
+      "paper",
+      "fig11",
+      "mid-load"
+    ],
+    "rounds": 20003,
+    "complete": true
+  },
+  {
+    "file": "fig11_perf_low.viz.bin",
+    "label": "Fig11 Gavel Low",
+    "tags": [
+      "philly",
+      "gavel",
+      "paper",
+      "fig11",
+      "low-load"
+    ],
+    "rounds": 20003,
+    "complete": true
+  },
+  {
+    "file": "fig11_ftf_high.viz.bin",
+    "label": "Fig11 FIFO High",
+    "tags": [
+      "philly",
+      "fifo",
+      "paper",
+      "fig11",
+      "high-load"
+    ],
+    "rounds": 14204,
+    "complete": true
+  },
+  {
+    "file": "fig11_ftf_mid.viz.bin",
+    "label": "Fig11 FIFO Mid",
+    "tags": [
+      "philly",
+      "fifo",
+      "paper",
+      "fig11",
+      "mid-load"
+    ],
+    "rounds": 20003,
+    "complete": true
+  },
+  {
+    "file": "fig11_ftf_low.viz.bin",
+    "label": "Fig11 FIFO Low",
+    "tags": [
+      "philly",
+      "fifo",
+      "paper",
+      "fig11",
+      "low-load"
+    ],
+    "rounds": 20003,
+    "complete": true
+  },
+  {
+    "file": "perf_0.6jph.viz.bin",
+    "label": "Gavel 0.6jph",
+    "tags": [
+      "philly",
+      "gavel",
+      "low-load"
+    ],
+    "rounds": 20003,
+    "complete": true
+  },
+  {
+    "file": "fairness_0.6jph.viz.bin",
+    "label": "Baseline 0.6jph",
+    "tags": [
+      "philly",
+      "baseline",
+      "low-load"
+    ],
+    "rounds": 20003,
+    "complete": true
+  }
+]

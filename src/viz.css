@@ -71,42 +71,97 @@ body {
   color: var(--accent);
 }
 
-.header-files {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
+/* Experiment Browser */
+.exp-browser {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: var(--bg-panel);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
 }
 
-.file-picker {
+.exp-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.exp-picker-row {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.file-picker label {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
+.exp-picker-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.file-picker input[type="file"] {
-  font-size: 0.8rem;
+.exp-picker-tags {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.exp-tag {
+  font-size: 0.65rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 3px;
+  border: 1px solid var(--border-color);
+  background: transparent;
   color: var(--text-secondary);
-  max-width: 220px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.12s;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
-.file-picker input[type="file"]::file-selector-button {
+.exp-tag:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.exp-tag.active {
+  background: var(--accent);
+  color: var(--bg-primary);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.exp-picker-select {
   background: var(--btn-bg);
   color: var(--text-primary);
   border: 1px solid var(--border-color);
   border-radius: 4px;
-  padding: 0.25rem 0.6rem;
-  cursor: pointer;
+  padding: 0.35rem 0.5rem;
   font-size: 0.8rem;
+  cursor: pointer;
+  flex: 1;
+  min-width: 0;
 }
 
-.file-picker input[type="file"]::file-selector-button:hover {
-  background: var(--btn-hover);
+.exp-picker-select:hover {
+  border-color: var(--accent);
+}
+
+.exp-picker-select option {
+  background: var(--bg-panel);
+  color: var(--text-primary);
+}
+
+.exp-picker-select option.partial {
+  color: var(--text-secondary);
+  font-style: italic;
 }
 
 .header-controls {
@@ -1019,9 +1074,8 @@ body {
     margin-left: 0;
   }
 
-  .header-files {
-    flex-direction: column;
-    gap: 0.25rem;
+  .exp-browser {
+    grid-template-columns: 1fr;
   }
 
   .chart-view-controls {

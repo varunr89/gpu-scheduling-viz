@@ -15,10 +15,9 @@ class Controller {
         this.buffers = [null, null];       // Raw ArrayBuffers per sim
         this.playAnimId = null;
         this.lastFrameTime = 0;
-        this.defaultsLoaded = false;
-
         // Chart data (precomputed on sim load)
         this.chartData = [null, null];  // Per-sim: { occupancy[], effectiveUtil[], movingJct[], queueLen[], completedJobs[] }
+        this._activeFilters = [new Set(), new Set()];
 
         this._cacheElements();
         this._bindEvents();
@@ -32,9 +31,19 @@ class Controller {
     }
 
     _cacheElements() {
-        // File inputs
-        this.fileInput1 = document.getElementById('file-input-1');
-        this.fileInput2 = document.getElementById('file-input-2');
+        // Experiment pickers
+        this.expPickers = [
+            document.getElementById('exp-picker-1'),
+            document.getElementById('exp-picker-2')
+        ];
+        this.expSelects = [
+            this.expPickers[0].querySelector('.exp-picker-select'),
+            this.expPickers[1].querySelector('.exp-picker-select')
+        ];
+        this.expTagContainers = [
+            this.expPickers[0].querySelector('.exp-picker-tags'),
+            this.expPickers[1].querySelector('.exp-picker-tags')
+        ];
 
         // Playback buttons
         this.btnFirst = document.getElementById('btn-first');
@@ -126,9 +135,10 @@ class Controller {
     }
 
     _bindEvents() {
-        // File inputs
-        this.fileInput1.addEventListener('change', (e) => this._onFileSelected(0, e));
-        this.fileInput2.addEventListener('change', (e) => this._onFileSelected(1, e));
+        // Experiment picker selects
+        for (let i = 0; i < 2; i++) {
+            this.expSelects[i].addEventListener('change', (e) => this._onExperimentSelected(i, e));
+        }
 
         // Playback
         this.btnFirst.addEventListener('click', () => this.model.setCurrentRound(0));
@@ -252,25 +262,18 @@ class Controller {
         });
     }
 
-    async _onFileSelected(simIndex, event) {
-        const file = event.target.files[0];
+    async _onExperimentSelected(simIndex, event) {
+        const file = event.target.value;
         if (!file) return;
 
-        // Clear default demo data when user loads their own file
-        if (this.defaultsLoaded) {
-            this.defaultsLoaded = false;
-            for (let i = 0; i < 2; i++) {
-                if (i !== simIndex && this.model.getSimulation(i)) {
-                    this.model.clearSimulation(i);
-                }
-            }
-        }
-
         try {
-            const arrayBuffer = await file.arrayBuffer();
+            const resp = await fetch(`data/${file}`);
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const arrayBuffer = await resp.arrayBuffer();
             this._loadFromBuffer(simIndex, arrayBuffer);
+            console.log(`Loaded ${file} into Sim ${simIndex + 1}`);
         } catch (err) {
-            console.error(`Failed to load simulation ${simIndex + 1}:`, err);
+            console.error(`Failed to load ${file}:`, err);
         }
     }
 
@@ -324,31 +327,111 @@ class Controller {
     }
 
     async _loadDefaultData() {
-        const defaults = [
-            'data/fig9_perf_high.viz.bin',
-            'data/fig9_mmf_high.viz.bin'
+        // Load manifest and build experiment picker UI
+        try {
+            const resp = await fetch('data/manifest.json');
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            this.manifest = await resp.json();
+            console.log(`Loaded manifest: ${this.manifest.length} experiments`);
+        } catch (err) {
+            console.warn('Could not load manifest:', err.message);
+            this.manifest = [];
+            return;
+        }
+
+        // Collect all unique tags across experiments
+        const allTags = new Set();
+        for (const exp of this.manifest) {
+            for (const tag of exp.tags) allTags.add(tag);
+        }
+
+        // Define tag display order by category
+        const tagOrder = [
+            'alibaba', 'philly',
+            'baseline', 'gavel', 'fifo', 'fgd',
+            'strided', 'random', 'bestfit',
+            'paper', 'fig9', 'fig10', 'fig11',
+            '60jph', 'high-load', 'mid-load', 'low-load',
+            'seed0', 'seed1', 'seed2'
         ];
+        const orderedTags = tagOrder.filter(t => allTags.has(t));
+
+        // Build tag buttons for each picker
+        for (let i = 0; i < 2; i++) {
+            const container = this.expTagContainers[i];
+            for (const tag of orderedTags) {
+                const btn = document.createElement('button');
+                btn.className = 'exp-tag';
+                btn.textContent = tag;
+                btn.dataset.tag = tag;
+                btn.addEventListener('click', () => {
+                    btn.classList.toggle('active');
+                    if (btn.classList.contains('active')) {
+                        this._activeFilters[i].add(tag);
+                    } else {
+                        this._activeFilters[i].delete(tag);
+                    }
+                    this._updateExperimentList(i);
+                });
+                container.appendChild(btn);
+            }
+            this._updateExperimentList(i);
+        }
+
+        // Auto-load defaults
+        const defaults = ['fig9_perf_high.viz.bin', 'fig9_mmf_high.viz.bin'];
         for (let i = 0; i < defaults.length; i++) {
             try {
-                const resp = await fetch(defaults[i]);
+                const resp = await fetch(`data/${defaults[i]}`);
                 if (!resp.ok) continue;
                 const arrayBuffer = await resp.arrayBuffer();
                 this._loadFromBuffer(i, arrayBuffer);
+                this.expSelects[i].value = defaults[i];
                 console.log(`Auto-loaded ${defaults[i]}`);
             } catch (err) {
                 console.warn(`Could not auto-load ${defaults[i]}:`, err.message);
             }
         }
 
-        // Mark defaults as loaded if at least one succeeded
-        if (this.model.getSimulation(0) || this.model.getSimulation(1)) {
-            this.defaultsLoaded = true;
-        }
-
         // Start at the beginning of the measurement phase
         const maxRounds = this.model.getMaxRounds();
         if (maxRounds > 6700) {
             this.model.setCurrentRound(6700);
+        }
+    }
+
+    _updateExperimentList(simIndex) {
+        const select = this.expSelects[simIndex];
+        const activeFilters = this._activeFilters[simIndex];
+        const currentValue = select.value;
+
+        // Clear existing options
+        while (select.options.length > 1) {
+            select.remove(1);
+        }
+
+        // Filter manifest
+        const filtered = this.manifest.filter(exp => {
+            if (activeFilters.size === 0) return true;
+            for (const f of activeFilters) {
+                if (!exp.tags.includes(f)) return false;
+            }
+            return true;
+        });
+
+        // Add matching experiments
+        for (const exp of filtered) {
+            const opt = document.createElement('option');
+            opt.value = exp.file;
+            const status = exp.complete ? '' : ' [partial]';
+            opt.textContent = `${exp.label} (${exp.rounds}r)${status}`;
+            if (!exp.complete) opt.className = 'partial';
+            select.appendChild(opt);
+        }
+
+        // Restore previous selection if still in list
+        if (currentValue && filtered.some(e => e.file === currentValue)) {
+            select.value = currentValue;
         }
     }
 
@@ -400,7 +483,6 @@ class Controller {
 
     _onSimulationLoaded(simIndex) {
         const sim = this.model.getSimulation(simIndex);
-        const canvas = simIndex === 0 ? this.canvas1 : this.canvas2;
         const section = simIndex === 0 ? this.simSection1 : this.simSection2;
 
         // Show section

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GPU Scheduling Visualizer</title>
-  <link rel="stylesheet" href="viz.css">
+  <link rel="stylesheet" href="src/viz.css">
 </head>
 <body>
   <!-- Header -->
@@ -61,139 +61,224 @@
     </div>
   </section>
 
-  <!-- Charts Section -->
-  <section id="charts-section" class="sim-section" hidden>
-    <div class="charts-header">
-      <h2 class="sim-title">Comparison</h2>
-      <div class="chart-view-controls">
-        <label class="chart-view-option">
-          <input type="radio" name="chart-view" value="all" checked> All
-        </label>
-        <label class="chart-view-option">
-          <input type="radio" name="chart-view" value="rolling"> Rolling
-        </label>
-        <div id="rolling-window-controls" class="rolling-window-controls" hidden>
-          <input type="number" id="rolling-window-size" value="100" min="10" max="10000" step="10">
-          <span class="rolling-window-unit">rounds</span>
-        </div>
-        <div class="rolling-window-controls">
-          <span class="rolling-window-unit">PDF last</span>
-          <input type="number" id="pdf-window-size" value="1000" min="10" max="100000" step="100">
-          <span class="rolling-window-unit">jobs</span>
-        </div>
-      </div>
-    </div>
-    <div class="charts-row">
-      <div class="chart-container">
-        <canvas id="chart-utilization" width="570" height="200"></canvas>
-      </div>
-      <div class="chart-container">
-        <canvas id="chart-jct" width="570" height="200"></canvas>
-      </div>
-      <div class="chart-container">
-        <canvas id="chart-queue" width="570" height="200"></canvas>
-      </div>
-      <div class="chart-container">
-        <canvas id="chart-jct-pdf" width="570" height="200"></canvas>
-      </div>
-    </div>
-  </section>
+  <!-- Tab Bar -->
+  <nav id="tab-bar" class="tab-bar" hidden>
+    <button class="tab-btn active" data-tab="charts">Charts</button>
+    <button class="tab-btn" data-tab="heatmap">Heatmap & Metrics</button>
+  </nav>
 
-  <!-- Simulation 1 -->
-  <section id="sim-1" class="sim-section">
-    <h2 class="sim-title">Simulation 1</h2>
-    <div class="canvas-container">
-      <canvas id="gpu-canvas-1" width="1200" height="400"></canvas>
-    </div>
-    <div class="metrics-bar">
-      <div class="metric-col">
-        <div class="metric-headline">
-          <span class="metric-label">Utilization</span>
-          <span id="metric-util-1" class="metric-value">--</span>
-        </div>
-        <div class="metric-breakdown" id="metric-util-breakdown-1"></div>
-      </div>
-      <div class="metric-col">
-        <div class="metric-headline">
-          <span class="metric-label">Running</span>
-          <span id="metric-running-1" class="metric-value">--</span>
-        </div>
-        <div class="metric-breakdown" id="metric-running-breakdown-1"></div>
-      </div>
-      <div class="metric-col">
-        <div class="metric-headline">
-          <span class="metric-label">Queued</span>
-          <span id="metric-queued-1" class="metric-value">--</span>
-        </div>
-        <div class="metric-breakdown" id="metric-queued-breakdown-1"></div>
-      </div>
-      <div class="metric-col">
-        <div class="metric-headline">
-          <span class="metric-label">Completed</span>
-          <span id="metric-completed-1" class="metric-value">--</span>
-        </div>
-        <div class="metric-sub-row">
-          <span class="metric-sub-label">Avg JCT</span>
-          <span id="metric-jct-1" class="metric-sub-value">--</span>
+  <!-- Tab: Charts -->
+  <div id="tab-charts" class="tab-content">
+    <section id="charts-section" class="sim-section" hidden>
+      <div class="charts-header">
+        <h2 class="sim-title">Comparison</h2>
+        <div class="chart-view-controls">
+          <label class="chart-view-option">
+            <input type="radio" name="chart-view" value="all" checked> All
+          </label>
+          <label class="chart-view-option">
+            <input type="radio" name="chart-view" value="rolling"> Rolling
+          </label>
+          <div id="rolling-window-controls" class="rolling-window-controls" hidden>
+            <input type="number" id="rolling-window-size" value="100" min="10" max="10000" step="10">
+            <span class="rolling-window-unit">rounds</span>
+          </div>
+          <div class="rolling-window-controls">
+            <span class="rolling-window-unit">PDF last</span>
+            <input type="number" id="pdf-window-size" value="1000" min="10" max="100000" step="100">
+            <span class="rolling-window-unit">jobs</span>
+          </div>
         </div>
       </div>
-    </div>
-  </section>
+      <div class="charts-row">
+        <div class="chart-container">
+          <canvas id="chart-utilization" width="570" height="200"></canvas>
+        </div>
+        <div class="chart-container">
+          <canvas id="chart-jct" width="570" height="200"></canvas>
+        </div>
+        <div class="chart-container">
+          <canvas id="chart-queue" width="570" height="200"></canvas>
+        </div>
+        <div class="chart-container">
+          <canvas id="chart-jct-pdf" width="570" height="200"></canvas>
+        </div>
+        <div class="chart-container">
+          <canvas id="chart-fragmentation" width="570" height="200"></canvas>
+        </div>
+        <div class="chart-container">
+          <canvas id="chart-pending" width="570" height="200"></canvas>
+        </div>
+      </div>
+    </section>
+  </div>
 
-  <!-- Simulation 2 (initially hidden) -->
-  <section id="sim-2" class="sim-section" hidden>
-    <h2 class="sim-title">Simulation 2</h2>
-    <div class="canvas-container">
-      <canvas id="gpu-canvas-2" width="1200" height="400"></canvas>
-    </div>
-    <div class="metrics-bar">
-      <div class="metric-col">
-        <div class="metric-headline">
-          <span class="metric-label">Utilization</span>
-          <span id="metric-util-2" class="metric-value">--</span>
-        </div>
-        <div class="metric-breakdown" id="metric-util-breakdown-2"></div>
+  <!-- Tab: Heatmap & Metrics -->
+  <div id="tab-heatmap" class="tab-content" hidden>
+    <!-- Simulation 1 -->
+    <section id="sim-1" class="sim-section">
+      <div class="sim-header">
+        <h2 class="sim-title">Simulation 1</h2>
+        <button class="heatmap-expand-btn" data-sim="0">Expand</button>
       </div>
-      <div class="metric-col">
-        <div class="metric-headline">
-          <span class="metric-label">Running</span>
-          <span id="metric-running-2" class="metric-value">--</span>
+      <div id="alloc-bars-1" class="alloc-bars"></div>
+      <div class="metrics-bar">
+        <div class="metric-col">
+          <div class="metric-headline">
+            <span class="metric-label">Utilization</span>
+            <span id="metric-util-1" class="metric-value">--</span>
+          </div>
+          <div class="metric-breakdown" id="metric-util-breakdown-1"></div>
         </div>
-        <div class="metric-breakdown" id="metric-running-breakdown-2"></div>
+        <div class="metric-col">
+          <div class="metric-headline">
+            <span class="metric-label">Running</span>
+            <span id="metric-running-1" class="metric-value">--</span>
+          </div>
+          <div class="metric-breakdown" id="metric-running-breakdown-1"></div>
+        </div>
+        <div class="metric-col">
+          <div class="metric-headline">
+            <span class="metric-label">Queued</span>
+            <span id="metric-queued-1" class="metric-value">--</span>
+          </div>
+          <div class="metric-breakdown" id="metric-queued-breakdown-1"></div>
+        </div>
+        <div class="metric-col">
+          <div class="metric-headline">
+            <span class="metric-label">Completed</span>
+            <span id="metric-completed-1" class="metric-value">--</span>
+          </div>
+          <div class="metric-sub-row">
+            <span class="metric-sub-label">Avg JCT</span>
+            <span id="metric-jct-1" class="metric-sub-value">--</span>
+          </div>
+        </div>
       </div>
-      <div class="metric-col">
-        <div class="metric-headline">
-          <span class="metric-label">Queued</span>
-          <span id="metric-queued-2" class="metric-value">--</span>
+      <div class="metrics-bar frag-metrics">
+        <div class="metric-col">
+          <div class="metric-headline">
+            <span class="metric-label">Frag Rate</span>
+            <span id="metric-fragrate-1" class="metric-value">--</span>
+          </div>
         </div>
-        <div class="metric-breakdown" id="metric-queued-breakdown-2"></div>
+        <div class="metric-col">
+          <div class="metric-headline">
+            <span class="metric-label">Frag/Total</span>
+            <span id="metric-fragtotal-1" class="metric-value">--</span>
+          </div>
+        </div>
+        <div class="metric-col">
+          <div class="metric-headline">
+            <span class="metric-label">Unallocated</span>
+            <span id="metric-unalloc-1" class="metric-value">--</span>
+          </div>
+        </div>
+        <div class="metric-col">
+          <div class="metric-headline">
+            <span class="metric-label">Occupied Nodes</span>
+            <span id="metric-nodes-1" class="metric-value">--</span>
+          </div>
+        </div>
+        <div class="metric-col">
+          <div class="metric-headline">
+            <span class="metric-label">Pending GPUs</span>
+            <span id="metric-pending-1" class="metric-value">--</span>
+          </div>
+          <div class="metric-breakdown" id="metric-pending-breakdown-1"></div>
+        </div>
       </div>
-      <div class="metric-col">
-        <div class="metric-headline">
-          <span class="metric-label">Completed</span>
-          <span id="metric-completed-2" class="metric-value">--</span>
-        </div>
-        <div class="metric-sub-row">
-          <span class="metric-sub-label">Avg JCT</span>
-          <span id="metric-jct-2" class="metric-sub-value">--</span>
-        </div>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- Queue Panels -->
-  <section id="queue-section">
-    <div class="queue-panels">
-      <div class="queue-panel" id="queue-panel-1">
-        <h3>Queue - Simulation 1</h3>
-        <ul id="queue-list-1" class="queue-list"></ul>
+    <!-- Simulation 2 (initially hidden) -->
+    <section id="sim-2" class="sim-section" hidden>
+      <div class="sim-header">
+        <h2 class="sim-title">Simulation 2</h2>
+        <button class="heatmap-expand-btn" data-sim="1">Expand</button>
       </div>
-      <div class="queue-panel" id="queue-panel-2">
-        <h3>Queue - Simulation 2</h3>
-        <ul id="queue-list-2" class="queue-list"></ul>
+      <div id="alloc-bars-2" class="alloc-bars"></div>
+      <div class="metrics-bar">
+        <div class="metric-col">
+          <div class="metric-headline">
+            <span class="metric-label">Utilization</span>
+            <span id="metric-util-2" class="metric-value">--</span>
+          </div>
+          <div class="metric-breakdown" id="metric-util-breakdown-2"></div>
+        </div>
+        <div class="metric-col">
+          <div class="metric-headline">
+            <span class="metric-label">Running</span>
+            <span id="metric-running-2" class="metric-value">--</span>
+          </div>
+          <div class="metric-breakdown" id="metric-running-breakdown-2"></div>
+        </div>
+        <div class="metric-col">
+          <div class="metric-headline">
+            <span class="metric-label">Queued</span>
+            <span id="metric-queued-2" class="metric-value">--</span>
+          </div>
+          <div class="metric-breakdown" id="metric-queued-breakdown-2"></div>
+        </div>
+        <div class="metric-col">
+          <div class="metric-headline">
+            <span class="metric-label">Completed</span>
+            <span id="metric-completed-2" class="metric-value">--</span>
+          </div>
+          <div class="metric-sub-row">
+            <span class="metric-sub-label">Avg JCT</span>
+            <span id="metric-jct-2" class="metric-sub-value">--</span>
+          </div>
+        </div>
       </div>
-    </div>
-  </section>
+      <div class="metrics-bar frag-metrics">
+        <div class="metric-col">
+          <div class="metric-headline">
+            <span class="metric-label">Frag Rate</span>
+            <span id="metric-fragrate-2" class="metric-value">--</span>
+          </div>
+        </div>
+        <div class="metric-col">
+          <div class="metric-headline">
+            <span class="metric-label">Frag/Total</span>
+            <span id="metric-fragtotal-2" class="metric-value">--</span>
+          </div>
+        </div>
+        <div class="metric-col">
+          <div class="metric-headline">
+            <span class="metric-label">Unallocated</span>
+            <span id="metric-unalloc-2" class="metric-value">--</span>
+          </div>
+        </div>
+        <div class="metric-col">
+          <div class="metric-headline">
+            <span class="metric-label">Occupied Nodes</span>
+            <span id="metric-nodes-2" class="metric-value">--</span>
+          </div>
+        </div>
+        <div class="metric-col">
+          <div class="metric-headline">
+            <span class="metric-label">Pending GPUs</span>
+            <span id="metric-pending-2" class="metric-value">--</span>
+          </div>
+          <div class="metric-breakdown" id="metric-pending-breakdown-2"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Queue Panels -->
+    <section id="queue-section">
+      <div class="queue-panels">
+        <div class="queue-panel" id="queue-panel-1">
+          <h3>Queue - Simulation 1</h3>
+          <ul id="queue-list-1" class="queue-list"></ul>
+        </div>
+        <div class="queue-panel" id="queue-panel-2">
+          <h3>Queue - Simulation 2</h3>
+          <ul id="queue-list-2" class="queue-list"></ul>
+        </div>
+      </div>
+    </section>
+  </div>
 
   <!-- Help Modal -->
   <div id="help-modal" class="modal-overlay" hidden>
@@ -233,6 +318,13 @@
           and job arrival rate (right axis).</li>
         <li><strong>JCT CDF</strong> -- Cumulative distribution of recent job
           completion times. Read as "X% of jobs completed within Y hours."</li>
+        <li><strong>Fragmentation</strong> -- FGD paper metrics. "Frag Rate"
+          (fragmentation / unallocated GPUs) shows what fraction of idle GPUs
+          are stranded on nodes that can't fit any popular task. "Frag/Total"
+          normalizes over the full cluster. Requires <code>--gpus-per-node</code>
+          in preprocessing for accurate node topology.</li>
+        <li><strong>Pending GPU Demand</strong> -- Stacked area chart of queued
+          GPU demand broken down by job scale factor (1-GPU, 2-GPU, etc.).</li>
       </ul>
 
       <h3>Controls</h3>
@@ -253,6 +345,6 @@
     </div>
   </div>
 
-  <script type="module" src="viz.js"></script>
+  <script type="module" src="src/viz.js"></script>
 </body>
 </html>

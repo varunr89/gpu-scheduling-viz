@@ -1,0 +1,89 @@
+{
+  "header": {
+    "numRounds": 2,
+    "numJobs": 3,
+    "numGpuTypes": 3,
+    "totalGpus": 12
+  },
+  "jobs": [
+    {
+      "job_id": 1,
+      "type_id": 0,
+      "scale_factor": 1,
+      "arrival_round": 0
+    },
+    {
+      "job_id": 2,
+      "type_id": 1,
+      "scale_factor": 2,
+      "arrival_round": 0
+    },
+    {
+      "job_id": 70000,
+      "type_id": 0,
+      "scale_factor": 4,
+      "arrival_round": 1
+    }
+  ],
+  "rounds": [
+    {
+      "round": 0,
+      "sim_time": 0.0,
+      "utilization": 0.0,
+      "jobs_running": 0,
+      "jobs_queued": 3,
+      "jobs_completed": 0,
+      "avg_jct": 0.0,
+      "completion_rate": 0.0,
+      "gpu_used": [
+        0,
+        0,
+        0
+      ],
+      "allocations": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "round": 1,
+      "sim_time": 360.5,
+      "utilization": 0.5,
+      "jobs_running": 2,
+      "jobs_queued": 1,
+      "jobs_completed": 0,
+      "avg_jct": 0.0,
+      "completion_rate": 0.0,
+      "gpu_used": [
+        2,
+        2,
+        2
+      ],
+      "allocations": [
+        1,
+        0,
+        0,
+        0,
+        2,
+        2,
+        0,
+        0,
+        70000,
+        70000,
+        70000,
+        70000
+      ]
+    }
+  ],
+  "roundSize": 88
+}

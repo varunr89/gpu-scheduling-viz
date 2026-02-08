@@ -61,8 +61,8 @@
       "60jph",
       "seed1"
     ],
-    "rounds": 168,
-    "complete": false
+    "rounds": 4542,
+    "complete": true
   },
   {
     "file": "fgd_alibaba_gavel_strided_60jph_s2.viz.bin",
@@ -74,8 +74,8 @@
       "60jph",
       "seed2"
     ],
-    "rounds": 175,
-    "complete": false
+    "rounds": 5532,
+    "complete": true
   },
   {
     "file": "fgd_alibaba_gavel_random_60jph_s0.viz.bin",
@@ -87,8 +87,8 @@
       "60jph",
       "seed0"
     ],
-    "rounds": 133,
-    "complete": false
+    "rounds": 4766,
+    "complete": true
   },
   {
     "file": "fgd_alibaba_gavel_random_60jph_s1.viz.bin",
@@ -100,8 +100,8 @@
       "60jph",
       "seed1"
     ],
-    "rounds": 189,
-    "complete": false
+    "rounds": 5395,
+    "complete": true
   },
   {
     "file": "fgd_alibaba_gavel_random_60jph_s2.viz.bin",
@@ -113,8 +113,8 @@
       "60jph",
       "seed2"
     ],
-    "rounds": 210,
-    "complete": false
+    "rounds": 5458,
+    "complete": true
   },
   {
     "file": "fgd_alibaba_gavel_fgd_60jph_s0.viz.bin",
@@ -128,6 +128,461 @@
     ],
     "rounds": 4920,
     "complete": true
+  },
+  {
+    "file": "fgd_alibaba_gavel_bestfit_60jph_s0.viz.bin",
+    "label": "Gavel Bestfit 60jph s0",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "bestfit",
+      "60jph",
+      "seed0"
+    ],
+    "rounds": 5524,
+    "complete": true
+  },
+  {
+    "file": "fgd_alibaba_gavel_bestfit_60jph_s1.viz.bin",
+    "label": "Gavel Bestfit 60jph s1",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "bestfit",
+      "60jph",
+      "seed1"
+    ],
+    "rounds": 5664,
+    "complete": true
+  },
+  {
+    "file": "fgd_alibaba_gavel_bestfit_60jph_s2.viz.bin",
+    "label": "Gavel Bestfit 60jph s2",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "bestfit",
+      "60jph",
+      "seed2"
+    ],
+    "rounds": 5700,
+    "complete": true
+  },
+  {
+    "file": "fgd_alibaba_gavel_fgd_60jph_s1.viz.bin",
+    "label": "Gavel+FGD 60jph s1",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "fgd",
+      "60jph",
+      "seed1"
+    ],
+    "rounds": 5025,
+    "complete": true
+  },
+  {
+    "file": "fgd_alibaba_gavel_fgd_60jph_s2.viz.bin",
+    "label": "Gavel+FGD 60jph s2",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "fgd",
+      "60jph",
+      "seed2"
+    ],
+    "rounds": 5045,
+    "complete": true
+  },
+  {
+    "file": "fgd_alibaba_baseline_strided_180jph_s0.viz.bin",
+    "label": "Baseline Strided 180jph s0",
+    "tags": [
+      "alibaba",
+      "baseline",
+      "strided",
+      "180jph",
+      "seed0"
+    ],
+    "rounds": 2073,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_baseline_strided_180jph_s1.viz.bin",
+    "label": "Baseline Strided 180jph s1",
+    "tags": [
+      "alibaba",
+      "baseline",
+      "strided",
+      "180jph",
+      "seed1"
+    ],
+    "rounds": 2083,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_baseline_strided_180jph_s2.viz.bin",
+    "label": "Baseline Strided 180jph s2",
+    "tags": [
+      "alibaba",
+      "baseline",
+      "strided",
+      "180jph",
+      "seed2"
+    ],
+    "rounds": 2119,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_gavel_strided_180jph_s0.viz.bin",
+    "label": "Gavel Strided 180jph s0",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "strided",
+      "180jph",
+      "seed0"
+    ],
+    "rounds": 2128,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_gavel_strided_180jph_s1.viz.bin",
+    "label": "Gavel Strided 180jph s1",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "strided",
+      "180jph",
+      "seed1"
+    ],
+    "rounds": 2088,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_gavel_strided_180jph_s2.viz.bin",
+    "label": "Gavel Strided 180jph s2",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "strided",
+      "180jph",
+      "seed2"
+    ],
+    "rounds": 2140,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_gavel_random_180jph_s0.viz.bin",
+    "label": "Gavel Random 180jph s0",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "random",
+      "180jph",
+      "seed0"
+    ],
+    "rounds": 1428,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_gavel_random_180jph_s1.viz.bin",
+    "label": "Gavel Random 180jph s1",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "random",
+      "180jph",
+      "seed1"
+    ],
+    "rounds": 1465,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_gavel_random_180jph_s2.viz.bin",
+    "label": "Gavel Random 180jph s2",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "random",
+      "180jph",
+      "seed2"
+    ],
+    "rounds": 1458,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_gavel_bestfit_180jph_s0.viz.bin",
+    "label": "Gavel Bestfit 180jph s0",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "bestfit",
+      "180jph",
+      "seed0"
+    ],
+    "rounds": 1557,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_gavel_bestfit_180jph_s1.viz.bin",
+    "label": "Gavel Bestfit 180jph s1",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "bestfit",
+      "180jph",
+      "seed1"
+    ],
+    "rounds": 1596,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_gavel_bestfit_180jph_s2.viz.bin",
+    "label": "Gavel Bestfit 180jph s2",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "bestfit",
+      "180jph",
+      "seed2"
+    ],
+    "rounds": 1596,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_gavel_fgd_180jph_s0.viz.bin",
+    "label": "Gavel+FGD 180jph s0",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "fgd",
+      "180jph",
+      "seed0"
+    ],
+    "rounds": 926,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_gavel_fgd_180jph_s1.viz.bin",
+    "label": "Gavel+FGD 180jph s1",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "fgd",
+      "180jph",
+      "seed1"
+    ],
+    "rounds": 955,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_gavel_fgd_180jph_s2.viz.bin",
+    "label": "Gavel+FGD 180jph s2",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "fgd",
+      "180jph",
+      "seed2"
+    ],
+    "rounds": 947,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_baseline_strided_360jph_s0.viz.bin",
+    "label": "Baseline Strided 360jph s0",
+    "tags": [
+      "alibaba",
+      "baseline",
+      "strided",
+      "360jph",
+      "seed0"
+    ],
+    "rounds": 1085,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_baseline_strided_360jph_s1.viz.bin",
+    "label": "Baseline Strided 360jph s1",
+    "tags": [
+      "alibaba",
+      "baseline",
+      "strided",
+      "360jph",
+      "seed1"
+    ],
+    "rounds": 1091,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_baseline_strided_360jph_s2.viz.bin",
+    "label": "Baseline Strided 360jph s2",
+    "tags": [
+      "alibaba",
+      "baseline",
+      "strided",
+      "360jph",
+      "seed2"
+    ],
+    "rounds": 1115,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_gavel_strided_360jph_s0.viz.bin",
+    "label": "Gavel Strided 360jph s0",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "strided",
+      "360jph",
+      "seed0"
+    ],
+    "rounds": 1094,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_gavel_strided_360jph_s1.viz.bin",
+    "label": "Gavel Strided 360jph s1",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "strided",
+      "360jph",
+      "seed1"
+    ],
+    "rounds": 1118,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_gavel_strided_360jph_s2.viz.bin",
+    "label": "Gavel Strided 360jph s2",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "strided",
+      "360jph",
+      "seed2"
+    ],
+    "rounds": 1130,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_gavel_random_360jph_s0.viz.bin",
+    "label": "Gavel Random 360jph s0",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "random",
+      "360jph",
+      "seed0"
+    ],
+    "rounds": 812,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_gavel_random_360jph_s1.viz.bin",
+    "label": "Gavel Random 360jph s1",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "random",
+      "360jph",
+      "seed1"
+    ],
+    "rounds": 823,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_gavel_random_360jph_s2.viz.bin",
+    "label": "Gavel Random 360jph s2",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "random",
+      "360jph",
+      "seed2"
+    ],
+    "rounds": 904,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_gavel_bestfit_360jph_s0.viz.bin",
+    "label": "Gavel Bestfit 360jph s0",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "bestfit",
+      "360jph",
+      "seed0"
+    ],
+    "rounds": 948,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_gavel_bestfit_360jph_s1.viz.bin",
+    "label": "Gavel Bestfit 360jph s1",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "bestfit",
+      "360jph",
+      "seed1"
+    ],
+    "rounds": 964,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_gavel_bestfit_360jph_s2.viz.bin",
+    "label": "Gavel Bestfit 360jph s2",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "bestfit",
+      "360jph",
+      "seed2"
+    ],
+    "rounds": 972,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_gavel_fgd_360jph_s0.viz.bin",
+    "label": "Gavel+FGD 360jph s0",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "fgd",
+      "360jph",
+      "seed0"
+    ],
+    "rounds": 484,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_gavel_fgd_360jph_s1.viz.bin",
+    "label": "Gavel+FGD 360jph s1",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "fgd",
+      "360jph",
+      "seed1"
+    ],
+    "rounds": 488,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_gavel_fgd_360jph_s2.viz.bin",
+    "label": "Gavel+FGD 360jph s2",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "fgd",
+      "360jph",
+      "seed2"
+    ],
+    "rounds": 480,
+    "complete": false
   },
   {
     "file": "fgd_fifo_fgd_placement.viz.bin",

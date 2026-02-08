@@ -264,7 +264,10 @@ class Controller {
 
     async _onExperimentSelected(simIndex, event) {
         const file = event.target.value;
-        if (!file) return;
+        if (!file) {
+            this.model.clearSimulation(simIndex);
+            return;
+        }
 
         try {
             const resp = await fetch(`data/${file}`);
@@ -351,7 +354,7 @@ class Controller {
             'baseline', 'gavel', 'fifo', 'fgd',
             'strided', 'random', 'bestfit',
             'paper', 'fig9', 'fig10', 'fig11',
-            '60jph', 'high-load', 'mid-load', 'low-load',
+            '60jph', '180jph', '360jph', 'high-load', 'mid-load', 'low-load',
             'seed0', 'seed1', 'seed2'
         ];
         const orderedTags = tagOrder.filter(t => allTags.has(t));
@@ -590,7 +593,8 @@ class Controller {
                     `${(roundData.utilization * 100).toFixed(1)}%`);
             }
 
-            // Running -- count unique jobs from allocations so it matches breakdown
+            // Running -- count unique jobs from allocations when available,
+            // otherwise fall back to telemetry jobsRunning count
             const runningByCategory = {};
             const seenJobs = new Set();
             for (const jobId of roundData.allocations) {
@@ -603,15 +607,17 @@ class Controller {
                     runningByCategory[cat] = (runningByCategory[cat] || 0) + 1;
                 }
             }
-            m.running.textContent = seenJobs.size;
+            const hasAllocData = sim.header.numJobs > 0;
+            m.running.textContent = hasAllocData ? seenJobs.size : roundData.jobsRunning;
             this._clearChildren(m.runningBreakdown);
             for (const [cat, count] of Object.entries(runningByCategory).sort((a, b) => b[1] - a[1])) {
                 this._addBreakdownRow(m.runningBreakdown, cat, String(count));
             }
 
-            // Queued -- use decoded queue length so it matches breakdown
+            // Queued -- use decoded queue when available, fall back to
+            // telemetry jobsQueued for telemetry-only files
             const queuedCount = this._updateQueuedBreakdown(i, clampedRound, m.queuedBreakdown);
-            m.queued.textContent = queuedCount;
+            m.queued.textContent = hasAllocData ? queuedCount : roundData.jobsQueued;
 
             // Completed
             m.completed.textContent = roundData.jobsCompleted;
@@ -731,6 +737,7 @@ class Controller {
         }
         const jobMap = container._jobMap;
         const typeMap = container._typeMap;
+        const hasAllocData = sim.header.numJobs > 0;
 
         const gpuTypes = sim.config.gpu_types;
         const allocs = roundData.allocations;
@@ -744,17 +751,26 @@ class Controller {
             // Count GPUs per category for this type
             const byCat = {};
             let usedCount = 0;
-            for (let g = 0; g < gt.count; g++) {
-                const jobId = allocs[gpuOff + g];
-                if (jobId === 0) continue;
-                usedCount++;
-                const job = jobMap.get(jobId);
-                if (job) {
-                    const jt = typeMap.get(job.typeId);
-                    const cat = jt ? jt.category : 'other';
-                    byCat[cat] = (byCat[cat] || 0) + 1;
-                } else {
-                    byCat['other'] = (byCat['other'] || 0) + 1;
+
+            if (hasAllocData) {
+                for (let g = 0; g < gt.count; g++) {
+                    const jobId = allocs[gpuOff + g];
+                    if (jobId === 0) continue;
+                    usedCount++;
+                    const job = jobMap.get(jobId);
+                    if (job) {
+                        const jt = typeMap.get(job.typeId);
+                        const cat = jt ? jt.category : 'other';
+                        byCat[cat] = (byCat[cat] || 0) + 1;
+                    } else {
+                        byCat['other'] = (byCat['other'] || 0) + 1;
+                    }
+                }
+            } else {
+                // Telemetry-only: use gpuUsed aggregate count
+                usedCount = roundData.gpuUsed[t] || 0;
+                if (usedCount > 0) {
+                    byCat['active'] = usedCount;
                 }
             }
             gpuOff += gt.count;
@@ -1301,6 +1317,7 @@ Controller.CATEGORY_COLORS = {
     cifar10: '#1abc9c',
     deepspeech: '#f06292',
     a3c: '#00bcd4',
+    active: '#5dade2',
     other: '#95a5a6'
 };
 

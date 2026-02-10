@@ -861,5 +861,63 @@
     ],
     "rounds": 20003,
     "complete": true
+  },
+  {
+    "file": "fgd_alibaba_mig_fgd_60jph_s0_full.viz.bin",
+    "label": "FGD+Migration 60jph s0 (full)",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "fgd",
+      "migration",
+      "60jph",
+      "seed0",
+      "full"
+    ],
+    "rounds": 4539,
+    "complete": true
+  },
+  {
+    "file": "fgd_alibaba_mig_fgd_60jph_s0.viz.bin",
+    "label": "FGD+Migration 60jph s0 (partial)",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "fgd",
+      "migration",
+      "60jph",
+      "seed0",
+      "partial"
+    ],
+    "rounds": 1912,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_mig_fgd_180jph_s0.viz.bin",
+    "label": "FGD+Migration 180jph s0",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "fgd",
+      "migration",
+      "180jph",
+      "seed0"
+    ],
+    "rounds": 430,
+    "complete": false
+  },
+  {
+    "file": "fgd_alibaba_mig_fgd_360jph_s0.viz.bin",
+    "label": "FGD+Migration 360jph s0",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "fgd",
+      "migration",
+      "360jph",
+      "seed0"
+    ],
+    "rounds": 137,
+    "complete": false
   }
 ]

@@ -311,8 +311,14 @@ class Controller {
         const blobUrl = URL.createObjectURL(blob);
         const dataSource = new DataSource(blobUrl);
 
+        // Build lookup maps once for O(1) access during rendering
+        const jobMap = new Map();
+        for (const j of jobs) jobMap.set(j.jobId, j);
+        const typeMap = new Map();
+        for (const jt of config.job_types) typeMap.set(jt.id, jt);
+
         this.model.loadSimulation(simIndex, {
-            header, config, dataSource, decoder, jobs
+            header, config, dataSource, decoder, jobs, jobMap, typeMap
         });
     }
 
@@ -526,8 +532,6 @@ class Controller {
             container._tip = null;
         }
         container._rows = null;
-        container._jobMap = null;
-        container._typeMap = null;
         while (container.firstChild) container.removeChild(container.firstChild);
         this.roundsData[simIndex] = null;
         this.queueIndices[simIndex] = null;
@@ -600,9 +604,9 @@ class Controller {
             for (const jobId of roundData.allocations) {
                 if (jobId === 0 || seenJobs.has(jobId)) continue;
                 seenJobs.add(jobId);
-                const job = sim.jobs.find(j => j.jobId === jobId);
+                const job = sim.jobMap.get(jobId);
                 if (job) {
-                    const jt = sim.config.job_types.find(t => t.id === job.typeId);
+                    const jt = sim.typeMap.get(job.typeId);
                     const cat = jt ? jt.category : 'other';
                     runningByCategory[cat] = (runningByCategory[cat] || 0) + 1;
                 }
@@ -728,15 +732,8 @@ class Controller {
         const container = this.allocBars[simIndex];
         if (!container._rows) return;
 
-        // Build job map lazily for O(1) lookups
-        if (!container._jobMap) {
-            container._jobMap = new Map();
-            for (const j of sim.jobs) container._jobMap.set(j.jobId, j);
-            container._typeMap = new Map();
-            for (const jt of sim.config.job_types) container._typeMap.set(jt.id, jt);
-        }
-        const jobMap = container._jobMap;
-        const typeMap = container._typeMap;
+        const jobMap = sim.jobMap;
+        const typeMap = sim.typeMap;
         const hasAllocData = sim.header.numJobs > 0;
 
         const gpuTypes = sim.config.gpu_types;
@@ -844,14 +841,14 @@ class Controller {
                 const li = document.createElement('li');
                 li.className = 'queue-item';
 
-                const job = sim.jobs.find(j => j.jobId === jobId);
+                const job = sim.jobMap.get(jobId);
                 let jobTypeName = `Job ${jobId}`;
                 let category = '';
                 let scaleFactor = 1;
 
                 if (job) {
                     scaleFactor = job.scaleFactor || 1;
-                    const jobType = sim.config.job_types.find(t => t.id === job.typeId);
+                    const jobType = sim.typeMap.get(job.typeId);
                     if (jobType) {
                         jobTypeName = jobType.name;
                         category = jobType.category || '';
@@ -920,9 +917,9 @@ class Controller {
             const queue = sim.decoder.decodeQueueEntry(buffer, queueOffset);
             const byCategory = {};
             for (const jobId of queue) {
-                const job = sim.jobs.find(j => j.jobId === jobId);
+                const job = sim.jobMap.get(jobId);
                 if (job) {
-                    const jt = sim.config.job_types.find(t => t.id === job.typeId);
+                    const jt = sim.typeMap.get(job.typeId);
                     const cat = jt ? jt.category : 'other';
                     byCategory[cat] = (byCategory[cat] || 0) + 1;
                 }
@@ -1037,10 +1034,6 @@ class Controller {
         }
 
         // Pending GPU demand by scale factor
-        // Build jobMap for O(1) lookups
-        const jobMap = new Map();
-        for (const j of sim.jobs) jobMap.set(j.jobId, j);
-
         // Collect unique scale factors and sort them
         const scaleFactors = [...new Set(sim.jobs.map(j => j.scaleFactor || 1))].sort((a, b) => a - b);
 

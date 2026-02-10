@@ -7,8 +7,8 @@ export class Model {
         this.listeners = [];
     }
 
-    loadSimulation(index, { header, config, dataSource, decoder, jobs }) {
-        this.simulations[index] = { header, config, dataSource, decoder, jobs };
+    loadSimulation(index, { header, config, dataSource, decoder, jobs, jobMap, typeMap }) {
+        this.simulations[index] = { header, config, dataSource, decoder, jobs, jobMap, typeMap };
         this._notify('simulationLoaded', index);
     }
 

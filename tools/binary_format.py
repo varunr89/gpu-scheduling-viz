@@ -5,13 +5,17 @@ File format: .viz.bin
 - Little-endian byte order
 - 8-byte alignment for all sections
 - Fixed 256-byte header
+
+Version 2 adds a sparse sharing section for GPUs with fractional allocation
+(multiple jobs per physical GPU). The sharing section stores per-GPU quarter-slot
+data only for GPUs that have mixed occupancy.
 """
 import json
 import struct
 
 # Constants
 MAGIC = b"GPUVIZ01"
-VERSION = 1
+VERSION = 2
 HEADER_SIZE = 256
 
 
@@ -33,10 +37,20 @@ def align_to_8(offset: int) -> int:
 # Q   - queue_offset (uint64)
 # Q   - index_offset (uint64)
 # Q   - config_json_offset (uint64)
-# Total: 8 + 4 + 4 + 4 + 1 + 2 + 1 + 8*5 = 64 bytes, padded to 256
+# Total: 8 + 4 + 4 + 4 + 1 + 2 + 1 + 8*5 = 64 bytes
+#
+# V2 extension at byte 64:
+# Q   - sharing_data_offset (uint64, 0 = no sharing data)
+# Q   - sharing_index_offset (uint64, 0 = no sharing index)
+# Total v2 packed: 64 + 16 = 80 bytes, padded to 256
 
 HEADER_FORMAT = "<8sIIIBHxQQQQQ"
 HEADER_PACKED_SIZE = struct.calcsize(HEADER_FORMAT)  # 64 bytes
+
+# V2 extension fields start at byte 64
+HEADER_V2_EXT_FORMAT = "<QQ"
+HEADER_V2_EXT_OFFSET = 64
+HEADER_V2_EXT_SIZE = struct.calcsize(HEADER_V2_EXT_FORMAT)  # 16 bytes
 
 
 def pack_header(
@@ -48,7 +62,9 @@ def pack_header(
     rounds_offset: int,
     queue_offset: int,
     index_offset: int,
-    config_json_offset: int
+    config_json_offset: int,
+    sharing_data_offset: int = 0,
+    sharing_index_offset: int = 0
 ) -> bytes:
     """Pack header into 256-byte buffer."""
     packed = struct.pack(
@@ -65,6 +81,13 @@ def pack_header(
         index_offset,
         config_json_offset
     )
+    # V2 extension
+    v2_ext = struct.pack(
+        HEADER_V2_EXT_FORMAT,
+        sharing_data_offset,
+        sharing_index_offset
+    )
+    packed = packed + v2_ext
     # Pad to 256 bytes
     return packed + b"\x00" * (HEADER_SIZE - len(packed))
 
@@ -80,7 +103,7 @@ def unpack_header(data: bytes) -> dict:
     if magic != MAGIC:
         raise ValueError(f"Invalid magic: {magic!r}, expected {MAGIC!r}")
 
-    return {
+    result = {
         'magic': magic,
         'version': values[1],
         'num_rounds': values[2],
@@ -91,8 +114,21 @@ def unpack_header(data: bytes) -> dict:
         'rounds_offset': values[7],
         'queue_offset': values[8],
         'index_offset': values[9],
-        'config_json_offset': values[10]
+        'config_json_offset': values[10],
+        'sharing_data_offset': 0,
+        'sharing_index_offset': 0
     }
+
+    # Read v2 extension if version >= 2
+    if result['version'] >= 2:
+        v2 = struct.unpack(
+            HEADER_V2_EXT_FORMAT,
+            data[HEADER_V2_EXT_OFFSET:HEADER_V2_EXT_OFFSET + HEADER_V2_EXT_SIZE]
+        )
+        result['sharing_data_offset'] = v2[0]
+        result['sharing_index_offset'] = v2[1]
+
+    return result
 
 
 # Job metadata format: 24 bytes each
@@ -229,10 +265,71 @@ def unpack_queue_index(data: bytes, num_rounds: int) -> list:
     return list(struct.unpack(f"<{num_rounds}Q", data[:num_rounds * 8]))
 
 
+# Sharing data section (v2)
+# Per round: H (uint16 num_entries), then per entry:
+#   H   - gpu_idx (uint16)
+#   I   - slot0_job_id (uint32)
+#   I   - slot1_job_id (uint32)
+#   I   - slot2_job_id (uint32)
+#   I   - slot3_job_id (uint32)
+# Entry size: 2 + 4*4 = 18 bytes
+SHARING_ENTRY_FORMAT = "<HIIII"
+SHARING_ENTRY_SIZE = struct.calcsize(SHARING_ENTRY_FORMAT)  # 18 bytes
+
+
+def pack_sharing_round(entries: list) -> bytes:
+    """Pack sharing data for one round.
+
+    Args:
+        entries: list of (gpu_idx, [slot0, slot1, slot2, slot3]) tuples
+    """
+    header = struct.pack("<H", len(entries))
+    if not entries:
+        return header
+    parts = [header]
+    for gpu_idx, slots in entries:
+        parts.append(struct.pack(
+            SHARING_ENTRY_FORMAT,
+            gpu_idx, slots[0], slots[1], slots[2], slots[3]
+        ))
+    return b"".join(parts)
+
+
+def unpack_sharing_round(data: bytes, offset: int = 0) -> list:
+    """Unpack sharing data for one round.
+
+    Returns:
+        list of (gpu_idx, [slot0, slot1, slot2, slot3]) tuples
+    """
+    num_entries = struct.unpack("<H", data[offset:offset + 2])[0]
+    offset += 2
+    entries = []
+    for _ in range(num_entries):
+        vals = struct.unpack(
+            SHARING_ENTRY_FORMAT,
+            data[offset:offset + SHARING_ENTRY_SIZE]
+        )
+        entries.append((vals[0], [vals[1], vals[2], vals[3], vals[4]]))
+        offset += SHARING_ENTRY_SIZE
+    return entries
+
+
 # Complete binary file writer
 
-def write_viz_file(path: str, config: dict, jobs: list, rounds: list, queues: list):
-    """Write complete visualization binary file."""
+def write_viz_file(path: str, config: dict, jobs: list, rounds: list,
+                   queues: list, sharing: list = None):
+    """Write complete visualization binary file.
+
+    Args:
+        path: Output file path
+        config: Cluster config dict
+        jobs: List of job metadata dicts
+        rounds: List of round data dicts
+        queues: List of queue lists (job IDs per round)
+        sharing: Optional list of sharing entries per round. Each element is
+                 a list of (gpu_idx, [slot0, slot1, slot2, slot3]) tuples.
+                 Pass None or empty list for v2 files with no sharing data.
+    """
     num_rounds = len(rounds)
     num_jobs = len(jobs)
     num_gpu_types = len(config['gpu_types'])
@@ -262,6 +359,26 @@ def write_viz_file(path: str, config: dict, jobs: list, rounds: list, queues: li
         queue_data.extend(pack_queue_entry(q))
     queue_padded_size = align_to_8(len(queue_data))
     index_offset = queue_offset + queue_padded_size
+    queue_index_size = num_rounds * 8  # Q per round
+
+    # Sharing section (after queue index)
+    sharing_data_offset = 0
+    sharing_index_offset = 0
+    sharing_data_buf = bytearray()
+    sharing_index_list = []
+
+    if sharing and len(sharing) == num_rounds:
+        base = index_offset + queue_index_size
+        sharing_data_offset = align_to_8(base)
+
+        for entries in sharing:
+            sharing_index_list.append(len(sharing_data_buf))
+            sharing_data_buf.extend(pack_sharing_round(entries))
+
+        sharing_padded_size = align_to_8(len(sharing_data_buf))
+        sharing_index_offset = sharing_data_offset + sharing_padded_size
+    else:
+        sharing_data_buf = bytearray()
 
     with open(path, 'wb') as f:
         # Write header
@@ -274,7 +391,9 @@ def write_viz_file(path: str, config: dict, jobs: list, rounds: list, queues: li
             rounds_offset=rounds_offset,
             queue_offset=queue_offset,
             index_offset=index_offset,
-            config_json_offset=config_json_offset
+            config_json_offset=config_json_offset,
+            sharing_data_offset=sharing_data_offset,
+            sharing_index_offset=sharing_index_offset
         ))
 
         # Write config JSON
@@ -295,6 +414,19 @@ def write_viz_file(path: str, config: dict, jobs: list, rounds: list, queues: li
 
         # Write queue index
         f.write(pack_queue_index(queue_index))
+
+        # Write sharing section if present
+        if sharing_data_offset > 0:
+            # Pad from end of queue index to sharing data start
+            current = index_offset + queue_index_size
+            if sharing_data_offset > current:
+                f.write(b"\x00" * (sharing_data_offset - current))
+
+            sharing_padded_size = align_to_8(len(sharing_data_buf))
+            f.write(sharing_data_buf + b"\x00" * (sharing_padded_size - len(sharing_data_buf)))
+
+            # Write sharing index
+            f.write(pack_queue_index(sharing_index_list))
 
 
 def read_viz_header(path: str) -> dict:

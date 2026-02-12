@@ -12,6 +12,7 @@ class Controller {
         this.model = new Model();
         this.roundsData = [null, null];   // Full decoded rounds per sim
         this.queueIndices = [null, null];  // Queue index arrays per sim
+        this.sharingIndices = [null, null]; // Sharing index arrays per sim (v2)
         this.buffers = [null, null];       // Raw ArrayBuffers per sim
         this.playAnimId = null;
         this.lastFrameTime = 0;
@@ -307,6 +308,13 @@ class Controller {
             );
         }
 
+        // V2: decode sharing index if present
+        if (decoder.hasSharing()) {
+            this.sharingIndices[simIndex] = decoder.decodeSharingIndex(arrayBuffer);
+        } else {
+            this.sharingIndices[simIndex] = null;
+        }
+
         const blob = new Blob([arrayBuffer]);
         const blobUrl = URL.createObjectURL(blob);
         const dataSource = new DataSource(blobUrl);
@@ -330,9 +338,17 @@ class Controller {
         const roundData = this.roundsData[simIndex][round];
         if (!roundData) return;
 
+        // Decode sharing data for this round if available
+        let sharingMap = null;
+        if (this.sharingIndices[simIndex]) {
+            sharingMap = sim.decoder.decodeSharingRound(
+                this.buffers[simIndex], this.sharingIndices[simIndex], round
+            );
+        }
+
         const policy = sim.config.policy || 'unknown';
         const title = `Simulation ${simIndex + 1} -- ${policy}`;
-        this.heatmapModal.open(title, sim.config, sim.jobs, roundData.allocations, simIndex);
+        this.heatmapModal.open(title, sim.config, sim.jobs, roundData.allocations, simIndex, sharingMap);
     }
 
     async _loadDefaultData() {
@@ -535,6 +551,7 @@ class Controller {
         while (container.firstChild) container.removeChild(container.firstChild);
         this.roundsData[simIndex] = null;
         this.queueIndices[simIndex] = null;
+        this.sharingIndices[simIndex] = null;
         this.buffers[simIndex] = null;
         this.chartData[simIndex] = null;
 
@@ -564,8 +581,16 @@ class Controller {
 
             if (!roundData) continue;
 
+            // Decode sharing data for this round if available
+            let roundSharingMap = null;
+            if (this.sharingIndices[i]) {
+                roundSharingMap = sim.decoder.decodeSharingRound(
+                    this.buffers[i], this.sharingIndices[i], clampedRound
+                );
+            }
+
             // Update allocation bars
-            this._updateAllocBars(i, sim, roundData);
+            this._updateAllocBars(i, sim, roundData, roundSharingMap);
 
             // Update metrics
             const metricIdx = i + 1;
@@ -684,7 +709,15 @@ class Controller {
                 const sim = this.model.getSimulation(si);
                 const cr = Math.min(round, sim.header.numRounds - 1);
                 const rd = this.roundsData[si][cr];
-                if (rd) this.heatmapModal.update(rd.allocations);
+                if (rd) {
+                    let sharingMap = null;
+                    if (this.sharingIndices[si]) {
+                        sharingMap = sim.decoder.decodeSharingRound(
+                            this.buffers[si], this.sharingIndices[si], cr
+                        );
+                    }
+                    this.heatmapModal.update(rd.allocations, sharingMap);
+                }
             }
         }
     }
@@ -728,7 +761,7 @@ class Controller {
         }
     }
 
-    _updateAllocBars(simIndex, sim, roundData) {
+    _updateAllocBars(simIndex, sim, roundData, sharingMap) {
         const container = this.allocBars[simIndex];
         if (!container._rows) return;
 
@@ -745,22 +778,42 @@ class Controller {
             const gt = gpuTypes[t];
             const rowInfo = container._rows[t];
 
-            // Count GPUs per category for this type
+            // Count GPU utilization per category for this type.
+            // With sharing, each occupied quarter = 0.25 GPU utilized.
             const byCat = {};
             let usedCount = 0;
 
             if (hasAllocData) {
                 for (let g = 0; g < gt.count; g++) {
-                    const jobId = allocs[gpuOff + g];
-                    if (jobId === 0) continue;
-                    usedCount++;
-                    const job = jobMap.get(jobId);
-                    if (job) {
-                        const jt = typeMap.get(job.typeId);
-                        const cat = jt ? jt.category : 'other';
-                        byCat[cat] = (byCat[cat] || 0) + 1;
+                    const globalIdx = gpuOff + g;
+                    const slots = sharingMap ? sharingMap.get(globalIdx) : null;
+
+                    if (slots) {
+                        // Shared GPU: count occupied quarters
+                        let occupiedQuarters = 0;
+                        for (let s = 0; s < 4; s++) {
+                            if (slots[s] !== 0) {
+                                occupiedQuarters++;
+                                const job = jobMap.get(slots[s]);
+                                const jt = job ? typeMap.get(job.typeId) : null;
+                                const cat = jt ? jt.category : 'other';
+                                byCat[cat] = (byCat[cat] || 0) + 0.25;
+                            }
+                        }
+                        usedCount += occupiedQuarters * 0.25;
                     } else {
-                        byCat['other'] = (byCat['other'] || 0) + 1;
+                        // Non-shared GPU: full 1.0 or 0
+                        const jobId = allocs[globalIdx];
+                        if (jobId === 0) continue;
+                        usedCount += 1;
+                        const job = jobMap.get(jobId);
+                        if (job) {
+                            const jt = typeMap.get(job.typeId);
+                            const cat = jt ? jt.category : 'other';
+                            byCat[cat] = (byCat[cat] || 0) + 1;
+                        } else {
+                            byCat['other'] = (byCat['other'] || 0) + 1;
+                        }
                     }
                 }
             } else {
@@ -775,7 +828,8 @@ class Controller {
             const idleCount = gt.count - usedCount;
             const pctVal = ((usedCount / gt.count) * 100).toFixed(0);
             rowInfo.pct.textContent = `${pctVal}%`;
-            rowInfo.idle.textContent = `${idleCount} idle`;
+            const idleStr = Number.isInteger(idleCount) ? idleCount : idleCount.toFixed(1);
+            rowInfo.idle.textContent = `${idleStr} idle`;
 
             // Build segments sorted by count (largest first) for visual stability
             const cats = Object.entries(byCat).sort((a, b) => b[1] - a[1]);

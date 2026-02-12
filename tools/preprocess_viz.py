@@ -3,7 +3,8 @@
 import re
 from typing import Dict, List, Tuple
 from viz.tools.log_parser import (
-    parse_job_arrival, parse_allocation, parse_job_completion, parse_telemetry
+    parse_job_arrival, parse_allocation, parse_allocation_bulk,
+    parse_job_completion, parse_telemetry
 )
 from viz.tools.binary_format import write_viz_file
 
@@ -65,6 +66,38 @@ def get_job_category(job_type: str) -> str:
     return 'other'
 
 
+def _fill_quarter_slots(slots, job_id, num_quarters):
+    """Fill quarter-slots for a job, starting from first empty slot."""
+    filled = 0
+    for s in range(4):
+        if filled >= num_quarters:
+            break
+        if slots[s] == 0:
+            slots[s] = job_id
+            filled += 1
+
+
+def _process_allocation(worker_id, job_id, total_gpus, gpu_req,
+                        current_allocations, current_gpu_slots):
+    """Process a single worker allocation for both primary and quarter-slot tracking."""
+    if not (0 <= worker_id < total_gpus):
+        return
+    num_quarters = max(1, round(gpu_req / 0.25))
+    # Primary allocation: first job to claim this GPU
+    if current_allocations[worker_id] == 0:
+        current_allocations[worker_id] = job_id
+    # Quarter-slot tracking
+    if num_quarters < 4:
+        if worker_id not in current_gpu_slots:
+            current_gpu_slots[worker_id] = [0, 0, 0, 0]
+        _fill_quarter_slots(current_gpu_slots[worker_id], job_id, num_quarters)
+    else:
+        # Full-GPU job: if GPU already has slot tracking (from a prior
+        # fractional job in the same round), fill all 4 slots
+        if worker_id in current_gpu_slots:
+            current_gpu_slots[worker_id] = [job_id, job_id, job_id, job_id]
+
+
 def preprocess_simulation(
     log_path: str,
     output_path: str,
@@ -89,18 +122,21 @@ def preprocess_simulation(
     total_gpus = sum(g['count'] for g in gpu_types)
 
     jobs: List[Dict] = []
-    job_index: Dict[int, Dict] = {}  # job_id -> job dict (for updating completion)
+    job_index: Dict[int, Dict] = {}
     job_type_map: Dict[str, int] = {}
     job_types_list: List[Dict] = []
     allocations_by_round: Dict[int, List[int]] = {}
+    gpu_slots_by_round: Dict[int, Dict[int, List[int]]] = {}
     telemetry_data: List[Dict] = []
     current_round = -1
     current_allocations = [0] * total_gpus
-    # Track completed job durations for running avg JCT
+    current_gpu_slots: Dict[int, List[int]] = {}
+    job_gpu_request: Dict[int, float] = {}
     completed_durations: List[float] = []
-    completed_ids_snapshot: Dict[int, set] = {}  # round -> set of completed job IDs
+    completed_ids_snapshot: Dict[int, set] = {}
     pending_completed_ids: set = set()
     avg_jct_by_round: Dict[int, float] = {}
+    has_sharing = False
 
     with open(log_path) as f:
         for line in f:
@@ -115,6 +151,10 @@ def preprocess_simulation(
                         'name': job_type,
                         'category': get_job_category(job_type)
                     })
+                gpu_req = arrival.get('gpu_request', 1.0)
+                job_gpu_request[arrival['job_id']] = gpu_req
+                if gpu_req < 1.0:
+                    has_sharing = True
                 job_dict = {
                     'job_id': arrival['job_id'],
                     'type_id': job_type_map[job_type],
@@ -131,45 +171,60 @@ def preprocess_simulation(
             if completion:
                 completed_durations.append(completion['duration'])
                 pending_completed_ids.add(completion['job_id'])
-                # Update job metadata with completion info
                 if completion['job_id'] in job_index:
                     job_index[completion['job_id']]['completion_round'] = max(0, current_round)
                     job_index[completion['job_id']]['duration'] = completion['duration']
                 continue
 
+            bulk_allocs = parse_allocation_bulk(line)
+            if bulk_allocs is not None:
+                for alloc_entry in bulk_allocs:
+                    job_id = alloc_entry['job_id']
+                    gpu_req = job_gpu_request.get(job_id, 1.0)
+                    for worker_id in alloc_entry['worker_ids']:
+                        _process_allocation(
+                            worker_id, job_id, total_gpus, gpu_req,
+                            current_allocations, current_gpu_slots
+                        )
+                continue
+
             alloc = parse_allocation(line)
             if alloc:
+                job_id = alloc['job_id']
+                gpu_req = job_gpu_request.get(job_id, 1.0)
                 for worker_id in alloc['worker_ids']:
-                    if 0 <= worker_id < total_gpus:
-                        current_allocations[worker_id] = alloc['job_id']
+                    _process_allocation(
+                        worker_id, job_id, total_gpus, gpu_req,
+                        current_allocations, current_gpu_slots
+                    )
                 continue
 
             telem = parse_telemetry(line)
             if telem:
                 new_round = telem['round']
-                # Save accumulated allocations for the round that just ended.
-                # Allocations between TELEMETRY(N) and TELEMETRY(N+1) are
-                # the schedule for round N+1. So when we see TELEMETRY(N+1),
-                # we save current_allocations as round N+1's state.
                 if new_round > 0:
                     allocations_by_round[new_round] = list(current_allocations)
+                    if has_sharing and current_gpu_slots:
+                        gpu_slots_by_round[new_round] = {
+                            idx: list(slots)
+                            for idx, slots in current_gpu_slots.items()
+                        }
                 else:
                     allocations_by_round[0] = [0] * total_gpus
-                # Snapshot completed jobs for this round's queue calculation
                 completed_ids_snapshot[new_round] = set(pending_completed_ids)
-                # Compute running avg JCT from completions seen so far
                 if completed_durations:
                     avg_jct_by_round[new_round] = (
                         sum(completed_durations) / len(completed_durations)
                     )
-                # Reset for next round -- each round emits a complete
-                # set of allocation lines, so we must not carry over.
+                # Reset for next round
                 current_allocations = [0] * total_gpus
+                current_gpu_slots = {}
                 current_round = new_round
                 telemetry_data.append(telem)
 
     rounds: List[Dict] = []
     queues: List[List[int]] = []
+    sharing: List[List] = []
     for telem in telemetry_data:
         r = telem['round']
         gpu_used = []
@@ -187,8 +242,6 @@ def preprocess_simulation(
                 and j['arrival_round'] <= r)
         ]
 
-        # Use our computed running avg JCT (telemetry avg_jct is 0
-        # when measurement window is unreachable)
         avg_jct = avg_jct_by_round.get(r, 0)
 
         rounds.append({
@@ -205,6 +258,17 @@ def preprocess_simulation(
         })
         queues.append(queued)
 
+        # Build sharing entries: only for GPUs with mixed occupancy
+        round_sharing = []
+        slot_data = gpu_slots_by_round.get(r, {})
+        for gpu_idx, slots in sorted(slot_data.items()):
+            unique = set(slots)
+            # Include if slots have different values (mixed jobs or partial idle)
+            # Skip if all 4 slots are the same job (no sharing info needed)
+            if len(unique) > 1:
+                round_sharing.append((gpu_idx, slots))
+        sharing.append(round_sharing)
+
     config = {
         'policy': policy,
         'gpu_types': gpu_types,
@@ -214,7 +278,12 @@ def preprocess_simulation(
         },
         'job_types': job_types_list
     }
-    write_viz_file(output_path, config, jobs, rounds, queues)
+
+    has_any_sharing = any(len(entries) > 0 for entries in sharing)
+    write_viz_file(
+        output_path, config, jobs, rounds, queues,
+        sharing=sharing if has_any_sharing else None
+    )
 
 
 if __name__ == '__main__':

@@ -11,7 +11,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const MAGIC = 'GPUVIZ01';
 const HEADER_PACKED_SIZE = 64;
-const JOB_METADATA_SIZE = 16;
+const JOB_METADATA_SIZE = 24;
 
 function decodeHeader(buffer) {
     const view = new DataView(buffer);

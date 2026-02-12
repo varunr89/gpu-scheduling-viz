@@ -2,7 +2,7 @@
 """Parser for simulation.log files to extract job and allocation data."""
 import json
 import re
-from typing import Optional
+from typing import List, Optional
 
 
 def parse_job_arrival(line: str) -> Optional[dict]:
@@ -27,7 +27,8 @@ def parse_job_arrival(line: str) -> Optional[dict]:
         return {
             'job_id': int(data['job_id']),
             'job_type': data['job_type'],
-            'scale_factor': data['scale_factor']
+            'scale_factor': data['scale_factor'],
+            'gpu_request': float(data.get('gpu_request', 1.0))
         }
     except (json.JSONDecodeError, KeyError, ValueError):
         return None
@@ -55,6 +56,31 @@ def parse_allocation(line: str) -> Optional[dict]:
         'worker_type': type_match.group(1),
         'worker_ids': [int(x.strip()) for x in ids_match.group(1).split(',')]
     }
+
+
+def parse_allocation_bulk(line: str) -> Optional[List[dict]]:
+    """Parse a compact ALLOCATION line emitted once per scheduling round.
+
+    Format: ALLOCATION {"job_id":[worker_id,...],...}
+    Returns a list of allocation dicts (same shape as parse_allocation output),
+    or None if the line is not an ALLOCATION line.
+    """
+    if 'ALLOCATION' not in line:
+        return None
+    match = re.search(r'ALLOCATION\s+(\{.*\})', line)
+    if not match:
+        return None
+    try:
+        data = json.loads(match.group(1))
+    except json.JSONDecodeError:
+        return None
+    results = []
+    for job_id_str, worker_ids in data.items():
+        results.append({
+            'job_id': int(job_id_str),
+            'worker_ids': worker_ids,
+        })
+    return results
 
 
 def parse_job_completion(line: str) -> Optional[dict]:

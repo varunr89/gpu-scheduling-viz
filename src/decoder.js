@@ -1,19 +1,24 @@
 // Binary format decoder for .viz.bin files
 // Format: little-endian throughout, 8-byte aligned sections
+//
+// V2 adds a sparse sharing section for fractional GPU allocation.
+// GPUs with multiple tenants store per-quarter-slot job IDs.
 
 const MAGIC = 'GPUVIZ01';
 const HEADER_SIZE = 256;
 const HEADER_PACKED_SIZE = 64;
 const JOB_METADATA_SIZE = 24;
+const SHARING_ENTRY_SIZE = 18; // H + 4*I = 2 + 16
 
 export function decodeHeader(buffer) {
     const view = new DataView(buffer);
     const magic = new TextDecoder().decode(new Uint8Array(buffer, 0, 8));
     if (magic !== MAGIC) throw new Error(`Invalid magic: ${magic}`);
 
-    return {
+    const version = view.getUint32(8, true);
+    const header = {
         magic,
-        version: view.getUint32(8, true),
+        version,
         numRounds: view.getUint32(12, true),
         numJobs: view.getUint32(16, true),
         numGpuTypes: view.getUint8(20),
@@ -22,8 +27,18 @@ export function decodeHeader(buffer) {
         roundsOffset: Number(view.getBigUint64(32, true)),
         queueOffset: Number(view.getBigUint64(40, true)),
         indexOffset: Number(view.getBigUint64(48, true)),
-        configJsonOffset: Number(view.getBigUint64(56, true))
+        configJsonOffset: Number(view.getBigUint64(56, true)),
+        sharingDataOffset: 0,
+        sharingIndexOffset: 0
     };
+
+    // V2 extension at byte 64
+    if (version >= 2) {
+        header.sharingDataOffset = Number(view.getBigUint64(64, true));
+        header.sharingIndexOffset = Number(view.getBigUint64(72, true));
+    }
+
+    return header;
 }
 
 export function decodeConfigJson(buffer, offset, endOffset) {
@@ -119,5 +134,57 @@ export class Decoder {
             index.push(Number(view.getBigUint64(offset + i * 8, true)));
         }
         return index;
+    }
+
+    // -- V2 sharing section --
+
+    /**
+     * Check if this file has sharing data.
+     */
+    hasSharing() {
+        return this.header.sharingDataOffset > 0 && this.header.sharingIndexOffset > 0;
+    }
+
+    /**
+     * Decode the sharing index (array of relative offsets into sharing data).
+     */
+    decodeSharingIndex(buffer) {
+        if (!this.hasSharing()) return null;
+        const view = new DataView(buffer);
+        const offset = this.header.sharingIndexOffset;
+        const index = [];
+        for (let i = 0; i < this.header.numRounds; i++) {
+            index.push(Number(view.getBigUint64(offset + i * 8, true)));
+        }
+        return index;
+    }
+
+    /**
+     * Decode sharing data for a single round.
+     * Returns a Map<gpuIdx, [slot0, slot1, slot2, slot3]> or null if no entries.
+     */
+    decodeSharingRound(buffer, sharingIndex, roundIdx) {
+        if (!sharingIndex) return null;
+        const relOffset = sharingIndex[roundIdx];
+        if (relOffset === undefined) return null;
+
+        const view = new DataView(buffer);
+        let off = this.header.sharingDataOffset + relOffset;
+        const numEntries = view.getUint16(off, true);
+        off += 2;
+
+        if (numEntries === 0) return null;
+
+        const map = new Map();
+        for (let i = 0; i < numEntries; i++) {
+            const gpuIdx = view.getUint16(off, true);
+            const slot0 = view.getUint32(off + 2, true);
+            const slot1 = view.getUint32(off + 6, true);
+            const slot2 = view.getUint32(off + 10, true);
+            const slot3 = view.getUint32(off + 14, true);
+            map.set(gpuIdx, [slot0, slot1, slot2, slot3]);
+            off += SHARING_ENTRY_SIZE;
+        }
+        return map;
     }
 }

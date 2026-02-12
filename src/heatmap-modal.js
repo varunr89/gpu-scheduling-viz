@@ -1,4 +1,5 @@
 // Fullscreen GPU allocation heatmap viewer with zoom/pan
+// V2: supports 2x2 quarter-slot rendering for GPU sharing
 
 const CATEGORY_COLORS = {
     resnet: '#3498db',
@@ -17,6 +18,7 @@ const CATEGORY_COLORS = {
 
 const EMPTY_COLOR = '#0d1117';
 const BG_COLOR = '#0f1219';
+const IDLE_FRAG_COLOR = '#1a1e2e'; // Slightly lighter than EMPTY for fragmented idle
 
 export class HeatmapModal {
     constructor() {
@@ -25,6 +27,7 @@ export class HeatmapModal {
         this.jobs = null;
         this.jobMap = null;
         this.allocations = null;
+        this.sharingMap = null; // Map<gpuIdx, [slot0,slot1,slot2,slot3]> or null
         this.isOpen = false;
 
         this.cellSize = 6;
@@ -148,10 +151,11 @@ export class HeatmapModal {
 
     // -- Public API --
 
-    open(title, config, jobs, allocations, simIndex) {
+    open(title, config, jobs, allocations, simIndex, sharingMap) {
         this.simIndex = simIndex;
         this.config = config;
         this.allocations = allocations;
+        this.sharingMap = sharingMap || null;
         this.jobs = jobs;
         this.jobMap = new Map();
         for (const j of jobs) this.jobMap.set(j.jobId, j);
@@ -172,9 +176,10 @@ export class HeatmapModal {
         this.tooltip.hidden = true;
     }
 
-    update(allocations) {
+    update(allocations, sharingMap) {
         if (!this.isOpen) return;
         this.allocations = allocations;
+        this.sharingMap = sharingMap || null;
         this._render();
     }
 
@@ -191,6 +196,9 @@ export class HeatmapModal {
             this._addLegendItem(cat, CATEGORY_COLORS[cat] || CATEGORY_COLORS.other);
         }
         this._addLegendItem('idle', EMPTY_COLOR);
+        if (this.sharingMap && this.sharingMap.size > 0) {
+            this._addLegendItem('idle (fragmented)', IDLE_FRAG_COLOR);
+        }
     }
 
     _addLegendItem(label, color) {
@@ -200,7 +208,7 @@ export class HeatmapModal {
         const swatch = document.createElement('span');
         swatch.className = 'heatmap-legend-swatch';
         swatch.style.background = color;
-        if (color === EMPTY_COLOR) {
+        if (color === EMPTY_COLOR || color === IDLE_FRAG_COLOR) {
             swatch.style.border = '1px solid #333';
         }
 
@@ -287,6 +295,8 @@ export class HeatmapModal {
         ctx.fillRect(0, 0, layout.width, layout.height);
 
         const gap = cs > 4 ? 0.5 : 0;
+        // Whether to render 2x2 sub-cells (need at least 4px per cell)
+        const useQuadrants = this.sharingMap && cs >= 4;
 
         for (const band of layout.bands) {
             // Header: type name + utilization
@@ -296,12 +306,24 @@ export class HeatmapModal {
 
             let usedCount = 0;
             for (let i = 0; i < band.count; i++) {
-                if (this.allocations[band.gpuOff + i] !== 0) usedCount++;
+                const globalIdx = band.gpuOff + i;
+                if (this.sharingMap) {
+                    const slots = this.sharingMap.get(globalIdx);
+                    if (slots) {
+                        let occ = 0;
+                        for (let s = 0; s < 4; s++) if (slots[s] !== 0) occ++;
+                        usedCount += occ * 0.25;
+                    } else if (this.allocations[globalIdx] !== 0) {
+                        usedCount += 1;
+                    }
+                } else {
+                    if (this.allocations[globalIdx] !== 0) usedCount++;
+                }
             }
             const pct = ((usedCount / band.count) * 100).toFixed(0);
-            const idleCount = band.count - usedCount;
+            const idleCount = (band.count - usedCount).toFixed(1).replace(/\.0$/, '');
             ctx.fillText(
-                `${band.name.toUpperCase()}  ${usedCount}/${band.count} (${pct}%)  ${idleCount} idle`,
+                `${band.name.toUpperCase()}  ${usedCount.toFixed(1).replace(/\.0$/, '')}/${band.count} (${pct}%)  ${idleCount} idle`,
                 2,
                 band.y + this.headerH - 3
             );
@@ -313,10 +335,33 @@ export class HeatmapModal {
                 const row = Math.floor(i / band.wrapCols);
                 const x = col * cs;
                 const y = cellY0 + row * cs;
-                const jobId = this.allocations[band.gpuOff + i];
+                const globalIdx = band.gpuOff + i;
+                const slots = useQuadrants ? this.sharingMap.get(globalIdx) : null;
 
-                ctx.fillStyle = this._color(jobId);
-                ctx.fillRect(x, y, cs - gap, cs - gap);
+                if (slots) {
+                    // 2x2 quadrant rendering
+                    const halfCs = (cs - gap) / 2;
+                    const qGap = cs >= 6 ? 1 : 0;
+                    const qSize = halfCs - qGap / 2;
+
+                    // Quarter layout: [0]=top-left, [1]=top-right, [2]=bottom-left, [3]=bottom-right
+                    const qx = [x, x + halfCs + qGap, x, x + halfCs + qGap];
+                    const qy = [y, y, y + halfCs + qGap, y + halfCs + qGap];
+
+                    for (let s = 0; s < 4; s++) {
+                        if (slots[s] === 0) {
+                            ctx.fillStyle = IDLE_FRAG_COLOR;
+                        } else {
+                            ctx.fillStyle = this._color(slots[s]);
+                        }
+                        ctx.fillRect(qx[s], qy[s], qSize, qSize);
+                    }
+                } else {
+                    // Solid cell (non-shared GPU or no sharing data)
+                    const jobId = this.allocations[globalIdx];
+                    ctx.fillStyle = this._color(jobId);
+                    ctx.fillRect(x, y, cs - gap, cs - gap);
+                }
             }
         }
     }
@@ -352,24 +397,56 @@ export class HeatmapModal {
 
             if (col >= band.wrapCols || idx >= band.count) continue;
 
-            const jobId = this.allocations[band.gpuOff + idx];
+            const globalIdx = band.gpuOff + idx;
+            const slots = this.sharingMap ? this.sharingMap.get(globalIdx) : null;
+
             let text = `${band.name.toUpperCase()} #${idx}`;
 
-            if (jobId === 0) {
-                text += ' -- idle';
+            if (slots) {
+                // Multi-tenant tooltip: show each job with quarter count
+                const jobQuarters = new Map(); // jobId -> count
+                let idleQuarters = 0;
+                for (let s = 0; s < 4; s++) {
+                    if (slots[s] === 0) {
+                        idleQuarters++;
+                    } else {
+                        jobQuarters.set(slots[s], (jobQuarters.get(slots[s]) || 0) + 1);
+                    }
+                }
+                const parts = [];
+                for (const [jobId, count] of jobQuarters) {
+                    const job = this.jobMap.get(jobId);
+                    if (job) {
+                        const jt = this.config.job_types.find(t => t.id === job.typeId);
+                        const name = jt ? jt.name : `Job ${jobId}`;
+                        parts.push(`Job ${jobId} (${name}) ${count}/4`);
+                    } else {
+                        parts.push(`Job ${jobId} ${count}/4`);
+                    }
+                }
+                if (idleQuarters > 0) {
+                    parts.push(`Idle: ${idleQuarters}/4`);
+                }
+                text += '\n' + parts.join('\n');
             } else {
-                const job = this.jobMap.get(jobId);
-                if (job) {
-                    const jt = this.config.job_types.find(t => t.id === job.typeId);
-                    text += ` -- Job ${jobId}`;
-                    if (jt) text += ` (${jt.name})`;
-                    if (job.scaleFactor) text += ` [${job.scaleFactor} GPU]`;
+                const jobId = this.allocations[globalIdx];
+                if (jobId === 0) {
+                    text += ' -- idle';
                 } else {
-                    text += ` -- Job ${jobId}`;
+                    const job = this.jobMap.get(jobId);
+                    if (job) {
+                        const jt = this.config.job_types.find(t => t.id === job.typeId);
+                        text += ` -- Job ${jobId}`;
+                        if (jt) text += ` (${jt.name})`;
+                        if (job.scaleFactor) text += ` [${job.scaleFactor} GPU]`;
+                    } else {
+                        text += ` -- Job ${jobId}`;
+                    }
                 }
             }
 
             this.tooltip.textContent = text;
+            this.tooltip.style.whiteSpace = slots ? 'pre-line' : 'nowrap';
             this.tooltip.hidden = false;
 
             const contentRect = this.overlay.querySelector('.heatmap-modal-content').getBoundingClientRect();

@@ -6,8 +6,8 @@ def test_magic_number_is_8_bytes():
     assert len(MAGIC) == 8
     assert MAGIC == b"GPUVIZ01"
 
-def test_version_is_1():
-    assert VERSION == 1
+def test_version_is_2():
+    assert VERSION == 2
 
 def test_header_size_is_256():
     assert HEADER_SIZE == 256
@@ -84,23 +84,30 @@ def test_header_offsets_are_8_byte_aligned():
 # Task 1.3: Job metadata tests
 from viz.tools.binary_format import pack_job_metadata, unpack_job_metadata, JOB_METADATA_SIZE
 
-def test_job_metadata_size_is_16():
-    assert JOB_METADATA_SIZE == 16
+def test_job_metadata_size_is_24():
+    assert JOB_METADATA_SIZE == 24
 
 def test_pack_job_metadata():
     job = {'job_id': 42, 'type_id': 5, 'scale_factor': 4, 'arrival_round': 100}
     packed = pack_job_metadata(job)
-    assert len(packed) == 16
+    assert len(packed) == 24
 
 def test_job_metadata_roundtrip():
     jobs = [
-        {'job_id': 0, 'type_id': 0, 'scale_factor': 1, 'arrival_round': 0},
-        {'job_id': 65536, 'type_id': 25, 'scale_factor': 8, 'arrival_round': 9999},
+        {'job_id': 0, 'type_id': 0, 'scale_factor': 1, 'arrival_round': 0,
+         'completion_round': 0, 'duration': 0.0},
+        {'job_id': 65536, 'type_id': 25, 'scale_factor': 8, 'arrival_round': 9999,
+         'completion_round': 500, 'duration': 3600.5},
     ]
     for job in jobs:
         packed = pack_job_metadata(job)
         unpacked = unpack_job_metadata(packed)
-        assert unpacked == job
+        assert unpacked['job_id'] == job['job_id']
+        assert unpacked['type_id'] == job['type_id']
+        assert unpacked['scale_factor'] == job['scale_factor']
+        assert unpacked['arrival_round'] == job['arrival_round']
+        assert unpacked['completion_round'] == job['completion_round']
+        assert abs(unpacked['duration'] - job['duration']) < 0.01
 
 
 # Task 1.4: Round data tests
@@ -249,3 +256,97 @@ def test_write_viz_file_creates_file():
         assert header['total_gpus'] == 108
     finally:
         os.unlink(path)
+
+
+# V2 sharing section tests
+from viz.tools.binary_format import pack_sharing_round, unpack_sharing_round
+
+
+def test_pack_sharing_round_empty():
+    packed = pack_sharing_round([])
+    assert len(packed) == 2  # Just the uint16 count
+    entries = unpack_sharing_round(packed)
+    assert entries == []
+
+
+def test_sharing_round_roundtrip():
+    entries = [
+        (100, [42, 42, 0, 0]),     # Half-GPU job + idle
+        (200, [10, 20, 10, 0]),    # Two jobs sharing + idle quarter
+        (300, [5, 5, 5, 5]),       # Shouldn't normally appear but test it
+    ]
+    packed = pack_sharing_round(entries)
+    unpacked = unpack_sharing_round(packed)
+    assert len(unpacked) == 3
+    for i, (gpu_idx, slots) in enumerate(unpacked):
+        assert gpu_idx == entries[i][0]
+        assert slots == entries[i][1]
+
+
+def test_write_viz_file_with_sharing():
+    config = {
+        'gpu_types': [{'name': 'v100', 'count': 4}],
+        'measurement_window': {'start_job': 0, 'end_job': 10},
+        'job_types': [{'id': 0, 'name': 'ResNet-18', 'category': 'resnet'}]
+    }
+    jobs = [{'job_id': 1, 'type_id': 0, 'scale_factor': 1, 'arrival_round': 0}]
+    rounds = [{
+        'round': 0, 'sim_time': 0.0, 'utilization': 0.5,
+        'jobs_running': 1, 'jobs_queued': 0, 'jobs_completed': 0,
+        'avg_jct': 0.0, 'completion_rate': 0.0,
+        'gpu_used': [2], 'allocations': [1, 0, 0, 0]
+    }]
+    queues = [[]]
+    sharing = [
+        [(0, [1, 1, 0, 0])],  # GPU 0: half occupied
+    ]
+
+    with tempfile.NamedTemporaryFile(suffix='.viz.bin', delete=False) as f:
+        path = f.name
+    try:
+        write_viz_file(path, config, jobs, rounds, queues, sharing=sharing)
+        header = read_viz_header(path)
+        assert header['version'] == 2
+        assert header['sharing_data_offset'] > 0
+        assert header['sharing_index_offset'] > 0
+        assert header['sharing_data_offset'] % 8 == 0
+    finally:
+        os.unlink(path)
+
+
+def test_write_viz_file_no_sharing_has_zero_offsets():
+    config = {
+        'gpu_types': [{'name': 'v100', 'count': 4}],
+        'measurement_window': {'start_job': 0, 'end_job': 10},
+        'job_types': [{'id': 0, 'name': 'ResNet-18', 'category': 'resnet'}]
+    }
+    jobs = [{'job_id': 1, 'type_id': 0, 'scale_factor': 1, 'arrival_round': 0}]
+    rounds = [{
+        'round': 0, 'sim_time': 0.0, 'utilization': 1.0,
+        'jobs_running': 1, 'jobs_queued': 0, 'jobs_completed': 0,
+        'avg_jct': 0.0, 'completion_rate': 0.0,
+        'gpu_used': [4], 'allocations': [1, 1, 1, 1]
+    }]
+    queues = [[]]
+
+    with tempfile.NamedTemporaryFile(suffix='.viz.bin', delete=False) as f:
+        path = f.name
+    try:
+        write_viz_file(path, config, jobs, rounds, queues)
+        header = read_viz_header(path)
+        assert header['sharing_data_offset'] == 0
+        assert header['sharing_index_offset'] == 0
+    finally:
+        os.unlink(path)
+
+
+def test_header_v2_sharing_offsets_roundtrip():
+    packed = pack_header(
+        num_rounds=100, num_jobs=50, num_gpu_types=3, total_gpus=108,
+        job_metadata_offset=256, rounds_offset=1024, queue_offset=50000,
+        index_offset=60000, config_json_offset=200,
+        sharing_data_offset=70000, sharing_index_offset=80000
+    )
+    unpacked = unpack_header(packed)
+    assert unpacked['sharing_data_offset'] == 70000
+    assert unpacked['sharing_index_offset'] == 80000

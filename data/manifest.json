@@ -919,5 +919,44 @@
     ],
     "rounds": 137,
     "complete": false
+  },
+  {
+    "file": "load_sweep_test.viz.bin",
+    "label": "Load Sweep Test (Gavel 60jph, 90s)",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "load-sweep",
+      "60jph",
+      "test"
+    ],
+    "rounds": 682,
+    "complete": false
+  },
+  {
+    "file": "load_sweep_test_sharing.viz.bin",
+    "label": "Load Sweep Test + GPU Sharing (Gavel 60jph, 90s)",
+    "tags": [
+      "alibaba",
+      "gavel",
+      "load-sweep",
+      "gpu-sharing",
+      "60jph",
+      "test"
+    ],
+    "rounds": 666,
+    "complete": false
+  },
+  {
+    "file": "sharing_test.viz.bin",
+    "label": "GPU Sharing Test (100 GPUs, Alibaba)",
+    "tags": [
+      "sharing",
+      "test",
+      "alibaba",
+      "local"
+    ],
+    "rounds": 6697,
+    "complete": true
   }
 ]

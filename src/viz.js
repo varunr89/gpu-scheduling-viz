@@ -6,6 +6,7 @@ import { TimeSeriesChart } from './timeseries.js';
 import { CDFChart } from './pdf-chart.js';
 import { HeatmapModal } from './heatmap-modal.js';
 import { buildWorkload, computeRoundMetrics } from './fragmentation.js';
+import { ComparisonChart, SaturationChart } from './comparison.js';
 
 class Controller {
     constructor() {
@@ -133,6 +134,20 @@ class Controller {
             document.getElementById('chart-pending'),
             { title: 'Pending GPU Demand', leftLabel: 'GPUs' }
         );
+
+        // Comparison charts (cross-experiment)
+        this.tabComparison = document.getElementById('tab-comparison');
+        const cmpJctCanvas = document.getElementById('chart-cmp-jct');
+        const cmpCompletedCanvas = document.getElementById('chart-cmp-completed');
+        const cmpSatCanvas = document.getElementById('chart-cmp-saturation');
+        if (cmpJctCanvas) {
+            this.cmpJctChart = new ComparisonChart(cmpJctCanvas,
+                { title: 'Average Job Completion Time (hours)', yLabel: 'hours' });
+            this.cmpCompletedChart = new ComparisonChart(cmpCompletedCanvas,
+                { title: 'Window Jobs Completed', yLabel: 'jobs' });
+            this.cmpSatChart = new SaturationChart(cmpSatCanvas,
+                { title: 'Seeds Saturated (out of 3)' });
+        }
     }
 
     _bindEvents() {
@@ -256,6 +271,10 @@ class Controller {
                     this._switchTab('charts');
                     break;
                 case 'Digit2':
+                    e.preventDefault();
+                    this._switchTab('comparison');
+                    break;
+                case 'Digit3':
                     e.preventDefault();
                     this._switchTab('heatmap');
                     break;
@@ -423,6 +442,57 @@ class Controller {
         if (maxRounds > 6700) {
             this.model.setCurrentRound(6700);
         }
+
+        // Load comparison data if available
+        this._loadComparisonData();
+    }
+
+    async _loadComparisonData() {
+        if (!this.cmpJctChart) return;
+        try {
+            const resp = await fetch('data/full_comparison.json');
+            if (!resp.ok) return;
+            const cmp = await resp.json();
+            console.log(`Loaded comparison data: ${cmp.configs.length} configs x ${cmp.loads.length} loads`);
+            this._renderComparisonCharts(cmp);
+        } catch (err) {
+            console.warn('Could not load comparison data:', err.message);
+        }
+    }
+
+    _renderComparisonCharts(cmp) {
+        const { loads, configs, metrics, config_labels, config_colors } = cmp;
+
+        // Build JCT series
+        const jctSeries = configs.map(c => ({
+            label: config_labels[c] || c,
+            color: config_colors[c] || '#888',
+            values: metrics[c].avg_jct,
+        }));
+        this.cmpJctChart.setData({ loads, series: jctSeries });
+        this.cmpJctChart.render();
+
+        // Build completed jobs series
+        const completedSeries = configs.map(c => ({
+            label: config_labels[c] || c,
+            color: config_colors[c] || '#888',
+            values: metrics[c].completed_jobs,
+        }));
+        this.cmpCompletedChart.setData({ loads, series: completedSeries });
+        this.cmpCompletedChart.render();
+
+        // Build saturation series
+        const satSeries = configs.map(c => ({
+            label: config_labels[c] || c,
+            color: config_colors[c] || '#888',
+            values: metrics[c].saturated,
+        }));
+        this.cmpSatChart.setData({ loads, series: satSeries });
+        this.cmpSatChart.render();
+
+        // Show tab bar even without sim data loaded
+        this._comparisonLoaded = true;
+        this.tabBar.hidden = false;
     }
 
     _updateExperimentList(simIndex) {
@@ -472,6 +542,7 @@ class Controller {
         // Toggle tab content visibility
         this.tabCharts.hidden = (tab !== 'charts');
         this.tabHeatmap.hidden = (tab !== 'heatmap');
+        if (this.tabComparison) this.tabComparison.hidden = (tab !== 'comparison');
 
         // Bars are DOM-based so they stay current across tab switches
     }
@@ -481,8 +552,8 @@ class Controller {
         const sim1 = this.model.getSimulation(1);
         const loadedCount = (sim0 ? 1 : 0) + (sim1 ? 1 : 0);
 
-        // Show/hide tab bar
-        this.tabBar.hidden = (loadedCount === 0);
+        // Show/hide tab bar (keep visible if comparison data loaded)
+        this.tabBar.hidden = (loadedCount === 0) && !this._comparisonLoaded;
 
         // Full-width vs comparison layout
         if (loadedCount === 1) {

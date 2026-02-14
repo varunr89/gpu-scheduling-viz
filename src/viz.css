@@ -1053,18 +1053,6 @@ body {
   display: none;
 }
 
-/* Comparison Charts */
-.comparison-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.comparison-grid .chart-container canvas {
-  width: 100%;
-  height: auto;
-}
-
 /* Responsive */
 
 

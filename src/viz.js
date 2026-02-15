@@ -372,11 +372,12 @@ class Controller {
 
         // Define tag display order by category
         const tagOrder = [
-            'alibaba', 'philly',
+            'alibaba', 'philly', 'detailed',
             'baseline', 'gavel', 'fifo', 'fgd',
             'strided', 'random', 'bestfit',
             'paper', 'fig9', 'fig10', 'fig11',
-            '60jph', '180jph', '360jph', 'high-load', 'mid-load', 'low-load',
+            '60jph', '110jph', '160jph', '180jph', '210jph', '260jph', '310jph', '360jph',
+            'high-load', 'mid-load', 'low-load',
             'seed0', 'seed1', 'seed2'
         ];
         const orderedTags = tagOrder.filter(t => allTags.has(t));

@@ -958,5 +958,278 @@
     ],
     "rounds": 6697,
     "complete": true
+  },
+  {
+    "file": "det_gavel_60jph.viz.bin",
+    "label": "Gavel 60jph",
+    "tags": [
+      "alibaba",
+      "detailed",
+      "gavel",
+      "strided",
+      "60jph"
+    ],
+    "rounds": 4423,
+    "complete": true
+  },
+  {
+    "file": "det_fgd_60jph.viz.bin",
+    "label": "FGD-only 60jph",
+    "tags": [
+      "alibaba",
+      "detailed",
+      "baseline",
+      "fgd",
+      "60jph"
+    ],
+    "rounds": 1221,
+    "complete": false
+  },
+  {
+    "file": "det_gavelfgd_60jph.viz.bin",
+    "label": "Gavel+FGD 60jph",
+    "tags": [
+      "alibaba",
+      "detailed",
+      "gavel",
+      "fgd",
+      "60jph"
+    ],
+    "rounds": 4423,
+    "complete": true
+  },
+  {
+    "file": "det_gavel_110jph.viz.bin",
+    "label": "Gavel 110jph",
+    "tags": [
+      "alibaba",
+      "detailed",
+      "gavel",
+      "strided",
+      "110jph"
+    ],
+    "rounds": 4677,
+    "complete": true
+  },
+  {
+    "file": "det_fgd_110jph.viz.bin",
+    "label": "FGD-only 110jph",
+    "tags": [
+      "alibaba",
+      "detailed",
+      "baseline",
+      "fgd",
+      "110jph"
+    ],
+    "rounds": 2046,
+    "complete": false
+  },
+  {
+    "file": "det_gavelfgd_110jph.viz.bin",
+    "label": "Gavel+FGD 110jph",
+    "tags": [
+      "alibaba",
+      "detailed",
+      "gavel",
+      "fgd",
+      "110jph"
+    ],
+    "rounds": 4677,
+    "complete": true
+  },
+  {
+    "file": "det_gavel_160jph.viz.bin",
+    "label": "Gavel 160jph",
+    "tags": [
+      "alibaba",
+      "detailed",
+      "gavel",
+      "strided",
+      "160jph"
+    ],
+    "rounds": 4882,
+    "complete": true
+  },
+  {
+    "file": "det_fgd_160jph.viz.bin",
+    "label": "FGD-only 160jph",
+    "tags": [
+      "alibaba",
+      "detailed",
+      "baseline",
+      "fgd",
+      "160jph"
+    ],
+    "rounds": 2739,
+    "complete": false
+  },
+  {
+    "file": "det_gavelfgd_160jph.viz.bin",
+    "label": "Gavel+FGD 160jph",
+    "tags": [
+      "alibaba",
+      "detailed",
+      "gavel",
+      "fgd",
+      "160jph"
+    ],
+    "rounds": 4882,
+    "complete": true
+  },
+  {
+    "file": "det_gavel_210jph.viz.bin",
+    "label": "Gavel 210jph",
+    "tags": [
+      "alibaba",
+      "detailed",
+      "gavel",
+      "strided",
+      "210jph"
+    ],
+    "rounds": 4304,
+    "complete": true
+  },
+  {
+    "file": "det_fgd_210jph.viz.bin",
+    "label": "FGD-only 210jph",
+    "tags": [
+      "alibaba",
+      "detailed",
+      "baseline",
+      "fgd",
+      "210jph"
+    ],
+    "rounds": 3278,
+    "complete": false
+  },
+  {
+    "file": "det_gavelfgd_210jph.viz.bin",
+    "label": "Gavel+FGD 210jph",
+    "tags": [
+      "alibaba",
+      "detailed",
+      "gavel",
+      "fgd",
+      "210jph"
+    ],
+    "rounds": 4304,
+    "complete": true
+  },
+  {
+    "file": "det_gavel_260jph.viz.bin",
+    "label": "Gavel 260jph",
+    "tags": [
+      "alibaba",
+      "detailed",
+      "gavel",
+      "strided",
+      "260jph"
+    ],
+    "rounds": 4483,
+    "complete": true
+  },
+  {
+    "file": "det_fgd_260jph.viz.bin",
+    "label": "FGD-only 260jph",
+    "tags": [
+      "alibaba",
+      "detailed",
+      "baseline",
+      "fgd",
+      "260jph"
+    ],
+    "rounds": 4079,
+    "complete": false
+  },
+  {
+    "file": "det_gavelfgd_260jph.viz.bin",
+    "label": "Gavel+FGD 260jph",
+    "tags": [
+      "alibaba",
+      "detailed",
+      "gavel",
+      "fgd",
+      "260jph"
+    ],
+    "rounds": 4483,
+    "complete": true
+  },
+  {
+    "file": "det_gavel_310jph.viz.bin",
+    "label": "Gavel 310jph",
+    "tags": [
+      "alibaba",
+      "detailed",
+      "gavel",
+      "strided",
+      "310jph"
+    ],
+    "rounds": 3628,
+    "complete": true
+  },
+  {
+    "file": "det_fgd_310jph.viz.bin",
+    "label": "FGD-only 310jph",
+    "tags": [
+      "alibaba",
+      "detailed",
+      "baseline",
+      "fgd",
+      "310jph"
+    ],
+    "rounds": 3665,
+    "complete": true
+  },
+  {
+    "file": "det_gavelfgd_310jph.viz.bin",
+    "label": "Gavel+FGD 310jph",
+    "tags": [
+      "alibaba",
+      "detailed",
+      "gavel",
+      "fgd",
+      "310jph"
+    ],
+    "rounds": 3628,
+    "complete": true
+  },
+  {
+    "file": "det_gavel_360jph.viz.bin",
+    "label": "Gavel 360jph",
+    "tags": [
+      "alibaba",
+      "detailed",
+      "gavel",
+      "strided",
+      "360jph"
+    ],
+    "rounds": 5137,
+    "complete": true
+  },
+  {
+    "file": "det_fgd_360jph.viz.bin",
+    "label": "FGD-only 360jph",
+    "tags": [
+      "alibaba",
+      "detailed",
+      "baseline",
+      "fgd",
+      "360jph"
+    ],
+    "rounds": 4873,
+    "complete": true
+  },
+  {
+    "file": "det_gavelfgd_360jph.viz.bin",
+    "label": "Gavel+FGD 360jph",
+    "tags": [
+      "alibaba",
+      "detailed",
+      "gavel",
+      "fgd",
+      "360jph"
+    ],
+    "rounds": 5137,
+    "complete": true
   }
 ]

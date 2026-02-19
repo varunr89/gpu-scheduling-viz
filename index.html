@@ -77,6 +77,7 @@
   <nav id="tab-bar" class="tab-bar" hidden>
     <button class="tab-btn active" data-tab="charts">Charts</button>
     <button class="tab-btn" data-tab="heatmap">Heatmap & Metrics</button>
+    <button class="tab-btn" data-tab="results">Results</button>
   </nav>
 
   <!-- Tab: Charts -->
@@ -122,6 +123,19 @@
           <canvas id="chart-pending" width="570" height="200"></canvas>
         </div>
       </div>
+    </section>
+  </div>
+
+  <!-- Tab: Results -->
+  <div id="tab-results" class="tab-content" hidden>
+    <section id="results-section" class="sim-section">
+        <div class="results-header">
+            <h2 class="sim-title">Aggregate Results</h2>
+        </div>
+        <div id="results-empty" class="results-empty">
+            Select a type and trace to view aggregate results.
+        </div>
+        <div id="results-charts" class="results-charts"></div>
     </section>
   </div>
 

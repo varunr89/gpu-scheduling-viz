@@ -6,6 +6,7 @@ import { TimeSeriesChart } from './timeseries.js';
 import { CDFChart } from './pdf-chart.js';
 import { HeatmapModal } from './heatmap-modal.js';
 import { buildWorkload, computeRoundMetrics } from './fragmentation.js';
+import { ResultsChart } from './results-chart.js';
 
 class Controller {
     constructor() {
@@ -18,7 +19,13 @@ class Controller {
         this.lastFrameTime = 0;
         // Chart data (precomputed on sim load)
         this.chartData = [null, null];  // Per-sim: { occupancy[], effectiveUtil[], movingJct[], queueLen[], completedJobs[] }
-        this._activeFilters = [new Set(), new Set()];
+        // Grouped filters: OR within group, AND between groups
+        this._filterGroups = ['date', 'type', 'trace', 'load', 'seed'];
+        this._activeFilters = [
+            { date: new Set(), type: new Set(), trace: new Set(), load: new Set(), seed: new Set() },
+            { date: new Set(), type: new Set(), trace: new Set(), load: new Set(), seed: new Set() },
+        ];
+        this._resultsCharts = []; // Active ResultsChart instances for Results tab
 
         this._cacheElements();
         this._bindEvents();
@@ -96,6 +103,9 @@ class Controller {
         this.tabCharts = document.getElementById('tab-charts');
         this.tabHeatmap = document.getElementById('tab-heatmap');
         this.activeTab = 'charts';
+        this.tabResults = document.getElementById('tab-results');
+        this.resultsEmpty = document.getElementById('results-empty');
+        this.resultsChartsContainer = document.getElementById('results-charts');
 
         // Queue lists
         this.queueList1 = document.getElementById('queue-list-1');
@@ -356,52 +366,94 @@ class Controller {
         try {
             const resp = await fetch('data/manifest.json');
             if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-            this.manifest = await resp.json();
-            console.log(`Loaded manifest: ${this.manifest.length} experiments`);
+            const manifestData = await resp.json();
+            if (Array.isArray(manifestData)) {
+                this.manifestExperiments = manifestData;
+                this.manifestResults = {};
+            } else {
+                this.manifestExperiments = manifestData.experiments || [];
+                this.manifestResults = manifestData.results || {};
+            }
+            console.log(`Loaded manifest: ${this.manifestExperiments.length} experiments`);
         } catch (err) {
             console.warn('Could not load manifest:', err.message);
-            this.manifest = [];
+            this.manifestExperiments = [];
+            this.manifestResults = {};
             return;
         }
 
-        // Collect all unique tags across experiments
-        const allTags = new Set();
-        for (const exp of this.manifest) {
-            for (const tag of exp.tags) allTags.add(tag);
+        // Collect unique values per filter group
+        const groupValues = {};
+        for (const group of this._filterGroups) {
+            groupValues[group] = new Set();
+        }
+        for (const exp of this.manifestExperiments) {
+            const f = exp.filters || {};
+            for (const group of this._filterGroups) {
+                if (f[group]) groupValues[group].add(f[group]);
+            }
         }
 
-        // Define tag display order by category
-        const tagOrder = [
-            'alibaba', 'philly', 'detailed',
-            'baseline', 'gavel', 'fifo', 'fgd',
-            'strided', 'random', 'bestfit',
-            'paper', 'fig9', 'fig10', 'fig11',
-            '60jph', '110jph', '160jph', '180jph', '210jph', '260jph', '310jph', '360jph',
-            'high-load', 'mid-load', 'low-load',
-            'seed0', 'seed1', 'seed2'
-        ];
-        const orderedTags = tagOrder.filter(t => allTags.has(t));
+        // Sort values within each group
+        const groupLabels = { date: 'Date', type: 'Type', trace: 'Trace', load: 'Load', seed: 'Seed' };
+        const sortedValues = {};
+        for (const group of this._filterGroups) {
+            const vals = [...groupValues[group]];
+            if (group === 'load') {
+                // Sort numerically: extract leading number, fall back to alpha
+                vals.sort((a, b) => {
+                    const na = parseFloat(a);
+                    const nb = parseFloat(b);
+                    if (!isNaN(na) && !isNaN(nb)) return na - nb;
+                    if (!isNaN(na)) return -1;
+                    if (!isNaN(nb)) return 1;
+                    return a.localeCompare(b);
+                });
+            } else if (group === 'date') {
+                vals.sort();
+            } else {
+                vals.sort();
+            }
+            sortedValues[group] = vals;
+        }
 
-        // Build tag buttons for each picker
+        // Build grouped tag buttons for each picker
         for (let i = 0; i < 2; i++) {
             const container = this.expTagContainers[i];
-            for (const tag of orderedTags) {
-                const btn = document.createElement('button');
-                btn.className = 'exp-tag';
-                btn.textContent = tag;
-                btn.dataset.tag = tag;
-                btn.addEventListener('click', () => {
-                    btn.classList.toggle('active');
-                    if (btn.classList.contains('active')) {
-                        this._activeFilters[i].add(tag);
-                    } else {
-                        this._activeFilters[i].delete(tag);
-                    }
-                    this._updateExperimentList(i);
-                });
-                container.appendChild(btn);
+            for (const group of this._filterGroups) {
+                const row = document.createElement('div');
+                row.className = 'exp-filter-group';
+                const label = document.createElement('span');
+                label.className = 'exp-filter-label';
+                label.textContent = groupLabels[group];
+                row.appendChild(label);
+
+                const btnWrap = document.createElement('div');
+                btnWrap.className = 'exp-filter-buttons';
+                for (const val of sortedValues[group]) {
+                    const btn = document.createElement('button');
+                    btn.className = 'exp-tag';
+                    btn.textContent = val;
+                    btn.dataset.group = group;
+                    btn.dataset.value = val;
+                    btn.addEventListener('click', () => {
+                        btn.classList.toggle('active');
+                        if (btn.classList.contains('active')) {
+                            this._activeFilters[i][group].add(val);
+                        } else {
+                            this._activeFilters[i][group].delete(val);
+                        }
+                        this._updateExperimentList(i);
+                        this._updateFilterAvailability(i);
+                        if (this.activeTab === 'results') { this._renderResultsTab(); }
+                    });
+                    btnWrap.appendChild(btn);
+                }
+                row.appendChild(btnWrap);
+                container.appendChild(row);
             }
             this._updateExperimentList(i);
+            this._updateFilterAvailability(i);
         }
 
         // Auto-load defaults
@@ -436,11 +488,13 @@ class Controller {
             select.remove(1);
         }
 
-        // Filter manifest
-        const filtered = this.manifest.filter(exp => {
-            if (activeFilters.size === 0) return true;
-            for (const f of activeFilters) {
-                if (!exp.tags.includes(f)) return false;
+        // Filter manifest: OR within each group, AND between groups
+        const filtered = this.manifestExperiments.filter(exp => {
+            const f = exp.filters || {};
+            for (const group of this._filterGroups) {
+                const selected = activeFilters[group];
+                if (selected.size === 0) continue; // no filter on this group
+                if (!selected.has(f[group])) return false;
             }
             return true;
         });
@@ -461,6 +515,139 @@ class Controller {
         }
     }
 
+    _updateFilterAvailability(simIndex) {
+        const activeFilters = this._activeFilters[simIndex];
+        const container = this.expTagContainers[simIndex];
+        const groups = container.querySelectorAll('.exp-filter-group');
+
+        groups.forEach((groupEl, groupIdx) => {
+            const group = this._filterGroups[groupIdx];
+            const buttons = groupEl.querySelectorAll('.exp-tag');
+
+            const available = new Map();
+            for (const exp of this.manifestExperiments) {
+                const f = exp.filters || {};
+                let matches = true;
+                for (const otherGroup of this._filterGroups) {
+                    if (otherGroup === group) continue;
+                    const selected = activeFilters[otherGroup];
+                    if (selected.size === 0) continue;
+                    if (!selected.has(f[otherGroup])) { matches = false; break; }
+                }
+                if (matches) {
+                    const val = f[group];
+                    available.set(val, (available.get(val) || 0) + 1);
+                }
+            }
+
+            buttons.forEach(btn => {
+                const val = btn.dataset.value;
+                const count = available.get(val) || 0;
+                if (count === 0 && !btn.classList.contains('active')) {
+                    btn.style.display = 'none';
+                } else {
+                    btn.style.display = '';
+                    btn.textContent = count > 0 ? `${val} (${count})` : val;
+                }
+            });
+        });
+    }
+
+    _renderResultsTab() {
+        const container = this.resultsChartsContainer;
+        const emptyMsg = this.resultsEmpty;
+
+        // Clear previous charts using safe DOM removal
+        while (container.firstChild) {
+            container.removeChild(container.firstChild);
+        }
+        this._resultsCharts = [];
+
+        // Determine which result sets to show based on active filter selections
+        // Use picker 0's filters as the "global" filter for results
+        const typeFilter = this._activeFilters[0].type;
+        const showGavel = typeFilter.size === 0 || typeFilter.has('gavel');
+        const showFgd = typeFilter.size === 0 || typeFilter.has('fgd');
+
+        const sections = [];
+        if (showGavel && this.manifestResults.gavel) {
+            for (const [figKey, figData] of Object.entries(this.manifestResults.gavel)) {
+                sections.push({ key: figKey, ...figData });
+            }
+        }
+        if (showFgd && this.manifestResults.fgd) {
+            for (const [figKey, figData] of Object.entries(this.manifestResults.fgd)) {
+                sections.push({ key: figKey, ...figData });
+            }
+        }
+
+        if (sections.length === 0) {
+            emptyMsg.style.display = '';
+            return;
+        }
+        emptyMsg.style.display = 'none';
+
+        for (const section of sections) {
+            // Create container
+            const wrapper = document.createElement('div');
+            wrapper.className = 'results-chart-container';
+
+            const canvas = document.createElement('canvas');
+            const containerWidth = container.clientWidth || 900;
+            canvas.width = Math.min(containerWidth, 1200);
+            canvas.height = 280;
+            wrapper.appendChild(canvas);
+            container.appendChild(wrapper);
+
+            // Build curve data for ResultsChart
+            const curves = [];
+            for (const [policyKey, curveData] of Object.entries(section.curves)) {
+                curves.push({
+                    key: policyKey,
+                    label: curveData.label,
+                    color: curveData.color,
+                    marker: curveData.marker || 'circle',
+                    data: curveData.data,
+                });
+            }
+
+            const chart = new ResultsChart(canvas, {
+                title: section.title,
+                xLabel: section.x_label,
+                yLabel: section.y_label,
+                onClick: (point, curve) => this._onResultsClick(point, curve),
+            });
+            chart.setData(curves, section.reference || null);
+            chart.render();
+            this._resultsCharts.push(chart);
+        }
+    }
+
+    _onResultsClick(point, curve) {
+        if (!point.files || point.files.length === 0) return;
+
+        // Load the first seed's file into Sim 1
+        const file = point.files[0];
+        const simIndex = 0;
+
+        // Fetch and load the .viz.bin
+        fetch(`data/${file}`)
+            .then(resp => {
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                return resp.arrayBuffer();
+            })
+            .then(buf => {
+                this._loadFromBuffer(simIndex, buf);
+                this.expSelects[simIndex].value = file;
+                // Switch to Charts tab to see the per-experiment view
+                this._switchTab('charts');
+                console.log(`Drilled down to ${file}`);
+            })
+            .catch(err => {
+                console.warn(`Failed to load ${file}:`, err.message);
+            });
+    }
+
     _switchTab(tab) {
         if (tab === this.activeTab) return;
         this.activeTab = tab;
@@ -473,6 +660,11 @@ class Controller {
         // Toggle tab content visibility
         this.tabCharts.hidden = (tab !== 'charts');
         this.tabHeatmap.hidden = (tab !== 'heatmap');
+        this.tabResults.hidden = (tab !== 'results');
+
+        if (tab === 'results' && this._renderResultsTab) {
+            this._renderResultsTab();
+        }
 
         // Bars are DOM-based so they stay current across tab switches
     }
@@ -483,7 +675,7 @@ class Controller {
         const loadedCount = (sim0 ? 1 : 0) + (sim1 ? 1 : 0);
 
         // Show/hide tab bar
-        this.tabBar.hidden = (loadedCount === 0);
+        this.tabBar.hidden = (loadedCount === 0 && Object.keys(this.manifestResults || {}).length === 0);
 
         // Full-width vs comparison layout
         if (loadedCount === 1) {

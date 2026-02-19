@@ -107,7 +107,30 @@ body {
 
 .exp-picker-tags {
   display: flex;
-  gap: 0.25rem;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.exp-filter-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+
+.exp-filter-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  min-width: 34px;
+  padding-top: 0.22rem;
+  flex-shrink: 0;
+}
+
+.exp-filter-buttons {
+  display: flex;
+  gap: 0.2rem;
   flex-wrap: wrap;
 }
 
@@ -361,6 +384,41 @@ body {
 /* Tab Content */
 .tab-content[hidden] {
   display: none;
+}
+
+/* Results Tab */
+.results-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+}
+
+.results-empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.results-charts {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.results-chart-container {
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-primary);
+    overflow: hidden;
+    position: relative;
+}
+
+.results-chart-container canvas {
+    display: block;
+    width: 100%;
+    cursor: crosshair;
 }
 
 /* Single-sim full-width mode */

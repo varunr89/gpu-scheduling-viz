@@ -615,6 +615,8 @@ class Controller {
                 title: section.title,
                 xLabel: section.x_label,
                 yLabel: section.y_label,
+                xRange: section.x_range || null,
+                yRange: section.y_range || null,
                 onClick: (point, curve) => this._onResultsClick(point, curve),
             });
             chart.setData(curves, section.reference || null);

@@ -13,6 +13,8 @@ export class ResultsChart {
      * @param {string} [opts.title]
      * @param {string} [opts.xLabel]
      * @param {string} [opts.yLabel]
+     * @param {number[]} [opts.xRange] - Fixed [min, max] for x-axis (paper match)
+     * @param {number[]} [opts.yRange] - Fixed [min, max] for y-axis (paper match)
      * @param {function} [opts.onClick] - (point, curve) => void
      */
     constructor(canvas, opts = {}) {
@@ -21,6 +23,8 @@ export class ResultsChart {
         this.title = opts.title || '';
         this.xLabel = opts.xLabel || '';
         this.yLabel = opts.yLabel || '';
+        this.xRange = opts.xRange || null;  // [min, max] or null for auto
+        this.yRange = opts.yRange || null;  // [min, max] or null for auto
         this.onClick = opts.onClick || null;
 
         // Data
@@ -80,8 +84,8 @@ export class ResultsChart {
             return;
         }
 
-        const yMin = 0;
-        const yTop = yMax * 1.1;
+        const yMin = this.yRange ? this.yRange[0] : 0;
+        const yTop = this.yRange ? yMax : yMax * 1.1;
 
         this._lastLayout = { plotX, plotY, plotW, plotH, xMin, xMax, yMin, yTop };
 
@@ -115,6 +119,15 @@ export class ResultsChart {
     }
 
     _computeRanges() {
+        // Use fixed ranges if provided (to match paper axis bounds)
+        if (this.xRange && this.yRange) {
+            return {
+                xMin: this.xRange[0],
+                xMax: this.xRange[1],
+                yMax: this.yRange[1],
+            };
+        }
+
         let xMin = Infinity, xMax = -Infinity, yMax = -Infinity;
 
         // Data curves
@@ -140,6 +153,15 @@ export class ResultsChart {
                     if (val != null && val > yMax) yMax = val;
                 }
             }
+        }
+
+        // Apply partial fixed ranges
+        if (this.xRange) {
+            xMin = this.xRange[0];
+            xMax = this.xRange[1];
+        }
+        if (this.yRange) {
+            yMax = this.yRange[1];
         }
 
         if (yMax <= 0) yMax = 1;

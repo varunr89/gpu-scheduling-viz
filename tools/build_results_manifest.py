@@ -43,6 +43,8 @@ GAVEL_FIGURE_CONFIG = {
         "title": "Figure 9: Single-GPU Jobs (Max-Min Fairness / LAS)",
         "x_label": "Input Job Rate (jobs/hr)",
         "y_label": "Average JCT (hours)",
+        "x_range": [0, 7],
+        "y_range": [0, 100],
         "policies": {
             "max_min_fairness": {"label": "Baseline", "color": "#e74c3c", "marker": "square"},
             "max_min_fairness_perf": {"label": "Gavel", "color": "#2ecc71", "marker": "circle"},
@@ -53,6 +55,8 @@ GAVEL_FIGURE_CONFIG = {
         "title": "Figure 10: Multi-GPU Jobs (Max-Min Fairness / LAS)",
         "x_label": "Input Job Rate (jobs/hr)",
         "y_label": "Average JCT (hours)",
+        "x_range": [0, 3],
+        "y_range": [0, 100],
         "policies": {
             "max_min_fairness": {"label": "Baseline", "color": "#e74c3c", "marker": "square"},
             "max_min_fairness_perf": {"label": "Gavel", "color": "#2ecc71", "marker": "circle"},
@@ -63,6 +67,8 @@ GAVEL_FIGURE_CONFIG = {
         "title": "Figure 11: Multi-GPU Jobs (Finish-Time Fairness)",
         "x_label": "Input Job Rate (jobs/hr)",
         "y_label": "Average JCT (hours)",
+        "x_range": [0, 3.5],
+        "y_range": [0, 100],
         "policies": {
             "finish_time_fairness": {"label": "Baseline", "color": "#e74c3c", "marker": "square"},
             "finish_time_fairness_perf": {"label": "Gavel", "color": "#2ecc71", "marker": "circle"},
@@ -85,6 +91,8 @@ FGD_FIGURE_CONFIG = {
         "title": "Figure 7a: Fragmentation Rate vs Demand",
         "x_label": "Demand (% cluster capacity)",
         "y_label": "Fragmentation Rate (%)",
+        "x_range": [0, 120],
+        "y_range": [0, 100],
         "ref_key": "fig7a_frag_rate_pct",
         "y_fn": lambda pt: pt["frag_ratio"] * 100,
     },
@@ -92,6 +100,8 @@ FGD_FIGURE_CONFIG = {
         "title": "Figure 7b: Fragmentation / Total GPUs vs Demand",
         "x_label": "Demand (% cluster capacity)",
         "y_label": "Fragmentation / Total GPUs (%)",
+        "x_range": [0, 120],
+        "y_range": [0, 16],
         "ref_key": "fig7b_frag_over_total_pct",
         "y_fn": lambda pt: (pt["fragmentation"] / TOTAL_GPUS_FGD) * 100,
     },
@@ -99,6 +109,8 @@ FGD_FIGURE_CONFIG = {
         "title": "Figure 9a: Unallocated GPUs vs Demand",
         "x_label": "Demand (% cluster capacity)",
         "y_label": "Unallocated GPUs (%)",
+        "x_range": [75, 120],
+        "y_range": [0, 25],
         "ref_key": "fig9a_unalloc_gpu_pct",
         "y_fn": lambda pt: (1 - pt["alloc_ratio"]) * 100,
     },
@@ -106,6 +118,8 @@ FGD_FIGURE_CONFIG = {
         "title": "Figure 9b: Occupied Nodes vs Demand",
         "x_label": "Demand (% cluster capacity)",
         "y_label": "Occupied Nodes",
+        "x_range": [0, 100],
+        "y_range": [0, 1250],
         "ref_key": "fig9b_occupied_nodes",
         "y_fn": lambda pt: pt["occupied_nodes"],
     },
@@ -239,14 +253,20 @@ def build_gavel_results() -> dict:
         # Build reference
         reference = build_gavel_reference(fig_key)
 
-        gavel_results[fig_key] = {
+        fig_entry = {
             "title": fig_cfg["title"],
             "x_label": fig_cfg["x_label"],
             "y_label": fig_cfg["y_label"],
             "curves": curves,
         }
+        if "x_range" in fig_cfg:
+            fig_entry["x_range"] = fig_cfg["x_range"]
+        if "y_range" in fig_cfg:
+            fig_entry["y_range"] = fig_cfg["y_range"]
         if reference:
-            gavel_results[fig_key]["reference"] = reference
+            fig_entry["reference"] = reference
+
+        gavel_results[fig_key] = fig_entry
 
     return gavel_results
 
@@ -348,14 +368,20 @@ def build_fgd_results() -> dict:
         # Build reference
         reference = build_fgd_reference(fig_cfg["ref_key"])
 
-        fgd_results[fig_key] = {
+        fig_entry = {
             "title": fig_cfg["title"],
             "x_label": fig_cfg["x_label"],
             "y_label": fig_cfg["y_label"],
             "curves": curves,
         }
+        if "x_range" in fig_cfg:
+            fig_entry["x_range"] = fig_cfg["x_range"]
+        if "y_range" in fig_cfg:
+            fig_entry["y_range"] = fig_cfg["y_range"]
         if reference:
-            fgd_results[fig_key]["reference"] = reference
+            fig_entry["reference"] = reference
+
+        fgd_results[fig_key] = fig_entry
 
     return fgd_results
 

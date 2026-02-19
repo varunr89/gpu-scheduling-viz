@@ -52,14 +52,7 @@ def parse_cluster_spec(spec: str) -> List[Dict]:
 
 
 def get_job_category(job_type: str) -> str:
-    """Map a job type string to its category.
-
-    Args:
-        job_type: Full job type string (e.g., "ResNet-50 (batch size 64)")
-
-    Returns:
-        Category name (e.g., "resnet") or "other" if no match
-    """
+    """Map a job type string to its category."""
     for key, category in JOB_TYPE_CATEGORIES.items():
         if key in job_type:
             return category
@@ -92,51 +85,25 @@ def _process_allocation(worker_id, job_id, total_gpus, gpu_req,
             current_gpu_slots[worker_id] = [0, 0, 0, 0]
         _fill_quarter_slots(current_gpu_slots[worker_id], job_id, num_quarters)
     else:
-        # Full-GPU job: if GPU already has slot tracking (from a prior
-        # fractional job in the same round), fill all 4 slots
         if worker_id in current_gpu_slots:
             current_gpu_slots[worker_id] = [job_id, job_id, job_id, job_id]
 
 
-def preprocess_simulation(
-    log_path: str,
-    output_path: str,
-    cluster_spec: str = "36:36:36",
-    measurement_window: Tuple[int, int] = (4000, 5000),
-    policy: str = "unknown",
-    gpus_per_node: int = 1
-) -> None:
-    """Process a simulation log file and generate a .viz.bin file.
+def _parse_jobs_and_telemetry(log_path, total_gpus, job_gpu_request,
+                              jobs, job_index, job_type_map, job_types_list):
+    """Parse job arrivals, completions, and telemetry from a log file.
 
-    Args:
-        log_path: Path to the simulation.log file
-        output_path: Path for the output .viz.bin file
-        cluster_spec: Cluster specification as "k80:p100:v100" counts
-        measurement_window: Tuple of (start_job, end_job) for measurement window
-        policy: Name of the scheduling policy
-        gpus_per_node: Number of GPUs per physical node (for fragmentation metrics)
+    Skips allocation lines entirely. Returns telemetry_data, newly_completed_by_round,
+    avg_jct_by_round, has_sharing.
     """
-    gpu_types = parse_cluster_spec(cluster_spec)
-    for gt in gpu_types:
-        gt['gpus_per_node'] = gpus_per_node
-    total_gpus = sum(g['count'] for g in gpu_types)
-
-    jobs: List[Dict] = []
-    job_index: Dict[int, Dict] = {}
-    job_type_map: Dict[str, int] = {}
-    job_types_list: List[Dict] = []
-    allocations_by_round: Dict[int, List[int]] = {}
-    gpu_slots_by_round: Dict[int, Dict[int, List[int]]] = {}
-    telemetry_data: List[Dict] = []
-    current_round = -1
-    current_allocations = [0] * total_gpus
-    current_gpu_slots: Dict[int, List[int]] = {}
-    job_gpu_request: Dict[int, float] = {}
-    completed_durations: List[float] = []
-    completed_ids_snapshot: Dict[int, set] = {}
+    telemetry_data = []
+    newly_completed_by_round: Dict[int, set] = {}
     pending_completed_ids: set = set()
     avg_jct_by_round: Dict[int, float] = {}
+    jct_running_sum = 0.0
+    jct_running_count = 0
     has_sharing = False
+    current_round = -1
 
     with open(log_path) as f:
         for line in f:
@@ -169,62 +136,269 @@ def preprocess_simulation(
 
             completion = parse_job_completion(line)
             if completion:
-                completed_durations.append(completion['duration'])
+                jct_running_sum += completion['duration']
+                jct_running_count += 1
                 pending_completed_ids.add(completion['job_id'])
                 if completion['job_id'] in job_index:
                     job_index[completion['job_id']]['completion_round'] = max(0, current_round)
                     job_index[completion['job_id']]['duration'] = completion['duration']
                 continue
 
-            bulk_allocs = parse_allocation_bulk(line)
-            if bulk_allocs is not None:
-                for alloc_entry in bulk_allocs:
-                    job_id = alloc_entry['job_id']
+            telem = parse_telemetry(line)
+            if telem:
+                new_round = telem['round']
+                if pending_completed_ids:
+                    newly_completed_by_round[new_round] = set(pending_completed_ids)
+                    pending_completed_ids = set()
+                if jct_running_count > 0:
+                    avg_jct_by_round[new_round] = jct_running_sum / jct_running_count
+                current_round = new_round
+                telemetry_data.append(telem)
+
+    return telemetry_data, newly_completed_by_round, avg_jct_by_round, has_sharing
+
+
+def _parse_allocations_for_rounds(log_path, total_gpus, job_gpu_request,
+                                  sampled_rounds, has_sharing):
+    """Second-pass: parse only allocation data for sampled rounds.
+
+    Returns allocations_by_round, gpu_slots_by_round.
+    """
+    allocations_by_round: Dict[int, List[int]] = {}
+    gpu_slots_by_round: Dict[int, Dict[int, List[int]]] = {}
+    current_allocations = [0] * total_gpus
+    current_gpu_slots: Dict[int, List[int]] = {}
+    current_round = -1
+    keep_current = sampled_rounds is None
+
+    with open(log_path) as f:
+        for line in f:
+            if keep_current:
+                bulk_allocs = parse_allocation_bulk(line)
+                if bulk_allocs is not None:
+                    for alloc_entry in bulk_allocs:
+                        job_id = alloc_entry['job_id']
+                        gpu_req = job_gpu_request.get(job_id, 1.0)
+                        for worker_id in alloc_entry['worker_ids']:
+                            _process_allocation(
+                                worker_id, job_id, total_gpus, gpu_req,
+                                current_allocations, current_gpu_slots
+                            )
+                    continue
+
+                alloc = parse_allocation(line)
+                if alloc:
+                    job_id = alloc['job_id']
                     gpu_req = job_gpu_request.get(job_id, 1.0)
-                    for worker_id in alloc_entry['worker_ids']:
+                    for worker_id in alloc['worker_ids']:
                         _process_allocation(
                             worker_id, job_id, total_gpus, gpu_req,
                             current_allocations, current_gpu_slots
                         )
-                continue
-
-            alloc = parse_allocation(line)
-            if alloc:
-                job_id = alloc['job_id']
-                gpu_req = job_gpu_request.get(job_id, 1.0)
-                for worker_id in alloc['worker_ids']:
-                    _process_allocation(
-                        worker_id, job_id, total_gpus, gpu_req,
-                        current_allocations, current_gpu_slots
-                    )
-                continue
+                    continue
 
             telem = parse_telemetry(line)
             if telem:
                 new_round = telem['round']
-                if new_round > 0:
-                    allocations_by_round[new_round] = list(current_allocations)
-                    if has_sharing and current_gpu_slots:
-                        gpu_slots_by_round[new_round] = {
-                            idx: list(slots)
-                            for idx, slots in current_gpu_slots.items()
-                        }
-                else:
-                    allocations_by_round[0] = [0] * total_gpus
-                completed_ids_snapshot[new_round] = set(pending_completed_ids)
-                if completed_durations:
-                    avg_jct_by_round[new_round] = (
-                        sum(completed_durations) / len(completed_durations)
-                    )
+                if keep_current:
+                    if new_round > 0:
+                        allocations_by_round[new_round] = list(current_allocations)
+                        if has_sharing and current_gpu_slots:
+                            gpu_slots_by_round[new_round] = {
+                                idx: list(slots)
+                                for idx, slots in current_gpu_slots.items()
+                            }
+                    else:
+                        allocations_by_round[0] = [0] * total_gpus
                 # Reset for next round
                 current_allocations = [0] * total_gpus
                 current_gpu_slots = {}
                 current_round = new_round
-                telemetry_data.append(telem)
+                keep_current = sampled_rounds is None or new_round in sampled_rounds
 
+    return allocations_by_round, gpu_slots_by_round
+
+
+def preprocess_simulation(
+    log_path: str,
+    output_path: str,
+    cluster_spec: str = "36:36:36",
+    measurement_window: Tuple[int, int] = (4000, 5000),
+    policy: str = "unknown",
+    gpus_per_node: int = 1,
+    max_rounds: int = 0
+) -> None:
+    """Process a simulation log file and generate a .viz.bin file.
+
+    Args:
+        log_path: Path to the simulation.log file
+        output_path: Path for the output .viz.bin file
+        cluster_spec: Cluster specification as "k80:p100:v100" counts
+        measurement_window: Tuple of (start_job, end_job) for measurement window
+        policy: Name of the scheduling policy
+        gpus_per_node: Number of GPUs per physical node (for fragmentation metrics)
+        max_rounds: If > 0, downsample to at most this many rounds (0 = no limit)
+    """
+    gpu_types = parse_cluster_spec(cluster_spec)
+    for gt in gpu_types:
+        gt['gpus_per_node'] = gpus_per_node
+    total_gpus = sum(g['count'] for g in gpu_types)
+
+    jobs: List[Dict] = []
+    job_index: Dict[int, Dict] = {}
+    job_type_map: Dict[str, int] = {}
+    job_types_list: List[Dict] = []
+    job_gpu_request: Dict[int, float] = {}
+
+    if max_rounds > 0:
+        # Two-pass approach: first collect metadata, then selectively parse allocations
+        telemetry_data, newly_completed_by_round, avg_jct_by_round, has_sharing = \
+            _parse_jobs_and_telemetry(
+                log_path, total_gpus, job_gpu_request,
+                jobs, job_index, job_type_map, job_types_list
+            )
+
+        # Determine which rounds to sample
+        sampled_rounds = None
+        if len(telemetry_data) > max_rounds:
+            step = len(telemetry_data) / max_rounds
+            sampled_indices = set(int(i * step) for i in range(max_rounds))
+            sampled_indices.add(0)
+            sampled_indices.add(len(telemetry_data) - 1)
+            sampled_telem = [t for i, t in enumerate(telemetry_data) if i in sampled_indices]
+            sampled_rounds = set(t['round'] for t in sampled_telem)
+            # Merge completions from skipped rounds into the next sampled round
+            all_rounds_sorted = [t['round'] for t in telemetry_data]
+            sampled_sorted = sorted(sampled_rounds)
+            merged_completions: Dict[int, set] = {}
+            pending_merge: set = set()
+            si = 0
+            for r in all_rounds_sorted:
+                ids = newly_completed_by_round.get(r)
+                if ids:
+                    pending_merge |= ids
+                if si < len(sampled_sorted) and r == sampled_sorted[si]:
+                    if pending_merge:
+                        merged_completions[r] = pending_merge
+                        pending_merge = set()
+                    si += 1
+            newly_completed_by_round = merged_completions
+            telemetry_data = sampled_telem
+
+        # Second pass: parse allocations only for sampled rounds
+        allocations_by_round, gpu_slots_by_round = _parse_allocations_for_rounds(
+            log_path, total_gpus, job_gpu_request, sampled_rounds, has_sharing
+        )
+    else:
+        # Single-pass approach: parse everything at once
+        allocations_by_round: Dict[int, List[int]] = {}
+        gpu_slots_by_round: Dict[int, Dict[int, List[int]]] = {}
+        telemetry_data: List[Dict] = []
+        newly_completed_by_round: Dict[int, set] = {}
+        pending_completed_ids: set = set()
+        avg_jct_by_round: Dict[int, float] = {}
+        jct_running_sum: float = 0.0
+        jct_running_count: int = 0
+        has_sharing = False
+        current_round = -1
+        current_allocations = [0] * total_gpus
+        current_gpu_slots: Dict[int, List[int]] = {}
+
+        with open(log_path) as f:
+            for line in f:
+                arrival = parse_job_arrival(line)
+                if arrival:
+                    job_type = arrival['job_type']
+                    if job_type not in job_type_map:
+                        type_id = len(job_types_list)
+                        job_type_map[job_type] = type_id
+                        job_types_list.append({
+                            'id': type_id,
+                            'name': job_type,
+                            'category': get_job_category(job_type)
+                        })
+                    gpu_req = arrival.get('gpu_request', 1.0)
+                    job_gpu_request[arrival['job_id']] = gpu_req
+                    if gpu_req < 1.0:
+                        has_sharing = True
+                    job_dict = {
+                        'job_id': arrival['job_id'],
+                        'type_id': job_type_map[job_type],
+                        'scale_factor': arrival['scale_factor'],
+                        'arrival_round': max(0, current_round),
+                        'completion_round': 0,
+                        'duration': 0.0
+                    }
+                    jobs.append(job_dict)
+                    job_index[arrival['job_id']] = job_dict
+                    continue
+
+                completion = parse_job_completion(line)
+                if completion:
+                    jct_running_sum += completion['duration']
+                    jct_running_count += 1
+                    pending_completed_ids.add(completion['job_id'])
+                    if completion['job_id'] in job_index:
+                        job_index[completion['job_id']]['completion_round'] = max(0, current_round)
+                        job_index[completion['job_id']]['duration'] = completion['duration']
+                    continue
+
+                bulk_allocs = parse_allocation_bulk(line)
+                if bulk_allocs is not None:
+                    for alloc_entry in bulk_allocs:
+                        job_id = alloc_entry['job_id']
+                        gpu_req = job_gpu_request.get(job_id, 1.0)
+                        for worker_id in alloc_entry['worker_ids']:
+                            _process_allocation(
+                                worker_id, job_id, total_gpus, gpu_req,
+                                current_allocations, current_gpu_slots
+                            )
+                    continue
+
+                alloc = parse_allocation(line)
+                if alloc:
+                    job_id = alloc['job_id']
+                    gpu_req = job_gpu_request.get(job_id, 1.0)
+                    for worker_id in alloc['worker_ids']:
+                        _process_allocation(
+                            worker_id, job_id, total_gpus, gpu_req,
+                            current_allocations, current_gpu_slots
+                        )
+                    continue
+
+                telem = parse_telemetry(line)
+                if telem:
+                    new_round = telem['round']
+                    if new_round > 0:
+                        allocations_by_round[new_round] = list(current_allocations)
+                        if has_sharing and current_gpu_slots:
+                            gpu_slots_by_round[new_round] = {
+                                idx: list(slots)
+                                for idx, slots in current_gpu_slots.items()
+                            }
+                    else:
+                        allocations_by_round[0] = [0] * total_gpus
+                    if pending_completed_ids:
+                        newly_completed_by_round[new_round] = set(pending_completed_ids)
+                        pending_completed_ids = set()
+                    if jct_running_count > 0:
+                        avg_jct_by_round[new_round] = jct_running_sum / jct_running_count
+                    # Reset for next round
+                    current_allocations = [0] * total_gpus
+                    current_gpu_slots = {}
+                    current_round = new_round
+                    telemetry_data.append(telem)
+
+    # Build output rounds
     rounds: List[Dict] = []
     queues: List[List[int]] = []
     sharing: List[List] = []
+
+    # Build sorted job arrival index for efficient queue computation
+    jobs_by_arrival = sorted(jobs, key=lambda j: j['arrival_round'])
+    arrival_cursor = 0
+    active_job_ids = set()
+
     for telem in telemetry_data:
         r = telem['round']
         gpu_used = []
@@ -234,13 +408,19 @@ def preprocess_simulation(
 
         allocs = allocations_by_round.get(r, [0] * total_gpus)
         running_jobs = set(j for j in allocs if j > 0)
-        completed_by_now = completed_ids_snapshot.get(r, set())
-        queued = [
-            j['job_id'] for j in jobs
-            if (j['job_id'] not in running_jobs
-                and j['job_id'] not in completed_by_now
-                and j['arrival_round'] <= r)
-        ]
+
+        # Incrementally add newly arrived jobs
+        while arrival_cursor < len(jobs_by_arrival) and jobs_by_arrival[arrival_cursor]['arrival_round'] <= r:
+            active_job_ids.add(jobs_by_arrival[arrival_cursor]['job_id'])
+            arrival_cursor += 1
+
+        # Remove only newly completed jobs (incremental)
+        newly_completed = newly_completed_by_round.get(r, None)
+        if newly_completed:
+            active_job_ids -= newly_completed
+
+        # Queued = active (arrived, not completed) minus running
+        queued = [jid for jid in active_job_ids if jid not in running_jobs]
 
         avg_jct = avg_jct_by_round.get(r, 0)
 
@@ -263,8 +443,6 @@ def preprocess_simulation(
         slot_data = gpu_slots_by_round.get(r, {})
         for gpu_idx, slots in sorted(slot_data.items()):
             unique = set(slots)
-            # Include if slots have different values (mixed jobs or partial idle)
-            # Skip if all 4 slots are the same job (no sharing info needed)
             if len(unique) > 1:
                 round_sharing.append((gpu_idx, slots))
         sharing.append(round_sharing)
@@ -315,6 +493,10 @@ if __name__ == '__main__':
         '--gpus-per-node', type=int, default=1,
         help='GPUs per physical node for fragmentation metrics (default: 1)'
     )
+    parser.add_argument(
+        '--max-rounds', type=int, default=0,
+        help='Max rounds to keep (0 = no limit). Downsamples evenly if exceeded.'
+    )
     args = parser.parse_args()
 
     # Auto-detect policy from log first line if not specified
@@ -334,5 +516,6 @@ if __name__ == '__main__':
         measurement_window=(args.window_start, args.window_end),
         policy=policy,
         gpus_per_node=args.gpus_per_node,
+        max_rounds=args.max_rounds,
     )
     print(f"Written to {args.output_path}")

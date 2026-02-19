@@ -5368,6 +5368,486 @@
       },
       "rounds": 16676,
       "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig10_max_min_fairness_2.8jph_multi_s0.viz.bin",
+      "label": "Gavel FIG10 Max Min Fairness 2.8jph multi s0",
+      "filters": {
+        "date": "2026-02-16",
+        "type": "gavel_replication",
+        "trace": "philly",
+        "load": "2.8jph",
+        "seed": "s0",
+        "figure": "fig10",
+        "policy": "max_min_fairness",
+        "mode": "multi"
+      },
+      "rounds": 3000,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig10_max_min_fairness_2.8jph_multi_s2.viz.bin",
+      "label": "Gavel FIG10 Max Min Fairness 2.8jph multi s2",
+      "filters": {
+        "date": "2026-02-16",
+        "type": "gavel_replication",
+        "trace": "philly",
+        "load": "2.8jph",
+        "seed": "s2",
+        "figure": "fig10",
+        "policy": "max_min_fairness",
+        "mode": "multi"
+      },
+      "rounds": 3000,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig10_max_min_fairness_3.0jph_multi_s0.viz.bin",
+      "label": "Gavel FIG10 Max Min Fairness 3.0jph multi s0",
+      "filters": {
+        "date": "2026-02-16",
+        "type": "gavel_replication",
+        "trace": "philly",
+        "load": "3.0jph",
+        "seed": "s0",
+        "figure": "fig10",
+        "policy": "max_min_fairness",
+        "mode": "multi"
+      },
+      "rounds": 3000,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig10_max_min_fairness_3.0jph_multi_s1.viz.bin",
+      "label": "Gavel FIG10 Max Min Fairness 3.0jph multi s1",
+      "filters": {
+        "date": "2026-02-16",
+        "type": "gavel_replication",
+        "trace": "philly",
+        "load": "3.0jph",
+        "seed": "s1",
+        "figure": "fig10",
+        "policy": "max_min_fairness",
+        "mode": "multi"
+      },
+      "rounds": 3000,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig10_max_min_fairness_3.0jph_multi_s2.viz.bin",
+      "label": "Gavel FIG10 Max Min Fairness 3.0jph multi s2",
+      "filters": {
+        "date": "2026-02-16",
+        "type": "gavel_replication",
+        "trace": "philly",
+        "load": "3.0jph",
+        "seed": "s2",
+        "figure": "fig10",
+        "policy": "max_min_fairness",
+        "mode": "multi"
+      },
+      "rounds": 3000,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig10_max_min_fairness_perf_3.0jph_multi_s0.viz.bin",
+      "label": "Gavel FIG10 Max Min Fairness Perf 3.0jph multi s0",
+      "filters": {
+        "date": "2026-02-16",
+        "type": "gavel_replication",
+        "trace": "philly",
+        "load": "3.0jph",
+        "seed": "s0",
+        "figure": "fig10",
+        "policy": "max_min_fairness_perf",
+        "mode": "multi"
+      },
+      "rounds": 3000,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig10_max_min_fairness_perf_3.0jph_multi_s1.viz.bin",
+      "label": "Gavel FIG10 Max Min Fairness Perf 3.0jph multi s1",
+      "filters": {
+        "date": "2026-02-16",
+        "type": "gavel_replication",
+        "trace": "philly",
+        "load": "3.0jph",
+        "seed": "s1",
+        "figure": "fig10",
+        "policy": "max_min_fairness_perf",
+        "mode": "multi"
+      },
+      "rounds": 3000,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig10_max_min_fairness_perf_3.0jph_multi_s2.viz.bin",
+      "label": "Gavel FIG10 Max Min Fairness Perf 3.0jph multi s2",
+      "filters": {
+        "date": "2026-02-16",
+        "type": "gavel_replication",
+        "trace": "philly",
+        "load": "3.0jph",
+        "seed": "s2",
+        "figure": "fig10",
+        "policy": "max_min_fairness_perf",
+        "mode": "multi"
+      },
+      "rounds": 3000,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig11_finish_time_fairness_3.4jph_multi_s0.viz.bin",
+      "label": "Gavel FIG11 Finish Time Fairness 3.4jph multi s0",
+      "filters": {
+        "date": "2026-02-16",
+        "type": "gavel_replication",
+        "trace": "philly",
+        "load": "3.4jph",
+        "seed": "s0",
+        "figure": "fig11",
+        "policy": "finish_time_fairness",
+        "mode": "multi"
+      },
+      "rounds": 3000,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig11_finish_time_fairness_3.4jph_multi_s1.viz.bin",
+      "label": "Gavel FIG11 Finish Time Fairness 3.4jph multi s1",
+      "filters": {
+        "date": "2026-02-16",
+        "type": "gavel_replication",
+        "trace": "philly",
+        "load": "3.4jph",
+        "seed": "s1",
+        "figure": "fig11",
+        "policy": "finish_time_fairness",
+        "mode": "multi"
+      },
+      "rounds": 3000,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig11_finish_time_fairness_3.4jph_multi_s2.viz.bin",
+      "label": "Gavel FIG11 Finish Time Fairness 3.4jph multi s2",
+      "filters": {
+        "date": "2026-02-16",
+        "type": "gavel_replication",
+        "trace": "philly",
+        "load": "3.4jph",
+        "seed": "s2",
+        "figure": "fig11",
+        "policy": "finish_time_fairness",
+        "mode": "multi"
+      },
+      "rounds": 3000,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig11_finish_time_fairness_perf_3.4jph_multi_s0.viz.bin",
+      "label": "Gavel FIG11 Finish Time Fairness Perf 3.4jph multi s0",
+      "filters": {
+        "date": "2026-02-16",
+        "type": "gavel_replication",
+        "trace": "philly",
+        "load": "3.4jph",
+        "seed": "s0",
+        "figure": "fig11",
+        "policy": "finish_time_fairness_perf",
+        "mode": "multi"
+      },
+      "rounds": 3000,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig11_finish_time_fairness_perf_3.4jph_multi_s1.viz.bin",
+      "label": "Gavel FIG11 Finish Time Fairness Perf 3.4jph multi s1",
+      "filters": {
+        "date": "2026-02-16",
+        "type": "gavel_replication",
+        "trace": "philly",
+        "load": "3.4jph",
+        "seed": "s1",
+        "figure": "fig11",
+        "policy": "finish_time_fairness_perf",
+        "mode": "multi"
+      },
+      "rounds": 3000,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig11_finish_time_fairness_perf_3.4jph_multi_s2.viz.bin",
+      "label": "Gavel FIG11 Finish Time Fairness Perf 3.4jph multi s2",
+      "filters": {
+        "date": "2026-02-16",
+        "type": "gavel_replication",
+        "trace": "philly",
+        "load": "3.4jph",
+        "seed": "s2",
+        "figure": "fig11",
+        "policy": "finish_time_fairness_perf",
+        "mode": "multi"
+      },
+      "rounds": 3000,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig9_max_min_fairness_7.6jph_single_s0.viz.bin",
+      "label": "Gavel FIG9 Max Min Fairness 7.6jph single s0",
+      "filters": {
+        "date": "2026-02-16",
+        "type": "gavel_replication",
+        "trace": "philly",
+        "load": "7.6jph",
+        "seed": "s0",
+        "figure": "fig9",
+        "policy": "max_min_fairness",
+        "mode": "single"
+      },
+      "rounds": 3000,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig9_max_min_fairness_7.6jph_single_s1.viz.bin",
+      "label": "Gavel FIG9 Max Min Fairness 7.6jph single s1",
+      "filters": {
+        "date": "2026-02-16",
+        "type": "gavel_replication",
+        "trace": "philly",
+        "load": "7.6jph",
+        "seed": "s1",
+        "figure": "fig9",
+        "policy": "max_min_fairness",
+        "mode": "single"
+      },
+      "rounds": 3000,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig9_max_min_fairness_7.6jph_single_s2.viz.bin",
+      "label": "Gavel FIG9 Max Min Fairness 7.6jph single s2",
+      "filters": {
+        "date": "2026-02-16",
+        "type": "gavel_replication",
+        "trace": "philly",
+        "load": "7.6jph",
+        "seed": "s2",
+        "figure": "fig9",
+        "policy": "max_min_fairness",
+        "mode": "single"
+      },
+      "rounds": 3000,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig9_max_min_fairness_8.0jph_single_s0.viz.bin",
+      "label": "Gavel FIG9 Max Min Fairness 8.0jph single s0",
+      "filters": {
+        "date": "2026-02-16",
+        "type": "gavel_replication",
+        "trace": "philly",
+        "load": "8.0jph",
+        "seed": "s0",
+        "figure": "fig9",
+        "policy": "max_min_fairness",
+        "mode": "single"
+      },
+      "rounds": 3000,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig9_max_min_fairness_8.0jph_single_s1.viz.bin",
+      "label": "Gavel FIG9 Max Min Fairness 8.0jph single s1",
+      "filters": {
+        "date": "2026-02-16",
+        "type": "gavel_replication",
+        "trace": "philly",
+        "load": "8.0jph",
+        "seed": "s1",
+        "figure": "fig9",
+        "policy": "max_min_fairness",
+        "mode": "single"
+      },
+      "rounds": 3000,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig9_max_min_fairness_8.0jph_single_s2.viz.bin",
+      "label": "Gavel FIG9 Max Min Fairness 8.0jph single s2",
+      "filters": {
+        "date": "2026-02-16",
+        "type": "gavel_replication",
+        "trace": "philly",
+        "load": "8.0jph",
+        "seed": "s2",
+        "figure": "fig9",
+        "policy": "max_min_fairness",
+        "mode": "single"
+      },
+      "rounds": 3000,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig9_max_min_fairness_perf_6.8jph_single_s1.viz.bin",
+      "label": "Gavel FIG9 Max Min Fairness Perf 6.8jph single s1",
+      "filters": {
+        "date": "2026-02-16",
+        "type": "gavel_replication",
+        "trace": "philly",
+        "load": "6.8jph",
+        "seed": "s1",
+        "figure": "fig9",
+        "policy": "max_min_fairness_perf",
+        "mode": "single"
+      },
+      "rounds": 3000,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig9_max_min_fairness_perf_7.2jph_single_s0.viz.bin",
+      "label": "Gavel FIG9 Max Min Fairness Perf 7.2jph single s0",
+      "filters": {
+        "date": "2026-02-16",
+        "type": "gavel_replication",
+        "trace": "philly",
+        "load": "7.2jph",
+        "seed": "s0",
+        "figure": "fig9",
+        "policy": "max_min_fairness_perf",
+        "mode": "single"
+      },
+      "rounds": 3000,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig9_max_min_fairness_perf_7.2jph_single_s1.viz.bin",
+      "label": "Gavel FIG9 Max Min Fairness Perf 7.2jph single s1",
+      "filters": {
+        "date": "2026-02-16",
+        "type": "gavel_replication",
+        "trace": "philly",
+        "load": "7.2jph",
+        "seed": "s1",
+        "figure": "fig9",
+        "policy": "max_min_fairness_perf",
+        "mode": "single"
+      },
+      "rounds": 3000,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig9_max_min_fairness_perf_7.2jph_single_s2.viz.bin",
+      "label": "Gavel FIG9 Max Min Fairness Perf 7.2jph single s2",
+      "filters": {
+        "date": "2026-02-16",
+        "type": "gavel_replication",
+        "trace": "philly",
+        "load": "7.2jph",
+        "seed": "s2",
+        "figure": "fig9",
+        "policy": "max_min_fairness_perf",
+        "mode": "single"
+      },
+      "rounds": 3000,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig9_max_min_fairness_perf_7.6jph_single_s0.viz.bin",
+      "label": "Gavel FIG9 Max Min Fairness Perf 7.6jph single s0",
+      "filters": {
+        "date": "2026-02-16",
+        "type": "gavel_replication",
+        "trace": "philly",
+        "load": "7.6jph",
+        "seed": "s0",
+        "figure": "fig9",
+        "policy": "max_min_fairness_perf",
+        "mode": "single"
+      },
+      "rounds": 3000,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig9_max_min_fairness_perf_7.6jph_single_s1.viz.bin",
+      "label": "Gavel FIG9 Max Min Fairness Perf 7.6jph single s1",
+      "filters": {
+        "date": "2026-02-16",
+        "type": "gavel_replication",
+        "trace": "philly",
+        "load": "7.6jph",
+        "seed": "s1",
+        "figure": "fig9",
+        "policy": "max_min_fairness_perf",
+        "mode": "single"
+      },
+      "rounds": 3000,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig9_max_min_fairness_perf_7.6jph_single_s2.viz.bin",
+      "label": "Gavel FIG9 Max Min Fairness Perf 7.6jph single s2",
+      "filters": {
+        "date": "2026-02-16",
+        "type": "gavel_replication",
+        "trace": "philly",
+        "load": "7.6jph",
+        "seed": "s2",
+        "figure": "fig9",
+        "policy": "max_min_fairness_perf",
+        "mode": "single"
+      },
+      "rounds": 3000,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig9_max_min_fairness_perf_8.0jph_single_s0.viz.bin",
+      "label": "Gavel FIG9 Max Min Fairness Perf 8.0jph single s0",
+      "filters": {
+        "date": "2026-02-16",
+        "type": "gavel_replication",
+        "trace": "philly",
+        "load": "8.0jph",
+        "seed": "s0",
+        "figure": "fig9",
+        "policy": "max_min_fairness_perf",
+        "mode": "single"
+      },
+      "rounds": 3000,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig9_max_min_fairness_perf_8.0jph_single_s1.viz.bin",
+      "label": "Gavel FIG9 Max Min Fairness Perf 8.0jph single s1",
+      "filters": {
+        "date": "2026-02-16",
+        "type": "gavel_replication",
+        "trace": "philly",
+        "load": "8.0jph",
+        "seed": "s1",
+        "figure": "fig9",
+        "policy": "max_min_fairness_perf",
+        "mode": "single"
+      },
+      "rounds": 3000,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig9_max_min_fairness_perf_8.0jph_single_s2.viz.bin",
+      "label": "Gavel FIG9 Max Min Fairness Perf 8.0jph single s2",
+      "filters": {
+        "date": "2026-02-16",
+        "type": "gavel_replication",
+        "trace": "philly",
+        "load": "8.0jph",
+        "seed": "s2",
+        "figure": "fig9",
+        "policy": "max_min_fairness_perf",
+        "mode": "single"
+      },
+      "rounds": 3000,
+      "complete": true
     }
   ],
   "results": {
@@ -5751,6 +6231,14 @@
             ]
           }
         },
+        "x_range": [
+          0,
+          7
+        ],
+        "y_range": [
+          0,
+          100
+        ],
         "reference": {
           "x": [
             0.5,
@@ -6097,6 +6585,14 @@
             ]
           }
         },
+        "x_range": [
+          0,
+          3
+        ],
+        "y_range": [
+          0,
+          100
+        ],
         "reference": {
           "x": [
             0.2,
@@ -6484,6 +6980,14 @@
             ]
           }
         },
+        "x_range": [
+          0,
+          3.5
+        ],
+        "y_range": [
+          0,
+          100
+        ],
         "reference": {
           "x": [
             0.2,
@@ -8980,6 +9484,14 @@
             ]
           }
         },
+        "x_range": [
+          0,
+          120
+        ],
+        "y_range": [
+          0,
+          100
+        ],
         "reference": {
           "x": [
             0,
@@ -11495,6 +12007,14 @@
             ]
           }
         },
+        "x_range": [
+          0,
+          120
+        ],
+        "y_range": [
+          0,
+          16
+        ],
         "reference": {
           "x": [
             0,
@@ -14018,6 +14538,14 @@
             ]
           }
         },
+        "x_range": [
+          75,
+          120
+        ],
+        "y_range": [
+          0,
+          25
+        ],
         "reference": {
           "x": [
             75,
@@ -16565,6 +17093,14 @@
             ]
           }
         },
+        "x_range": [
+          0,
+          100
+        ],
+        "y_range": [
+          0,
+          1250
+        ],
         "reference": {
           "x": [
             0,

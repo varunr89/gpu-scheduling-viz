@@ -489,7 +489,9 @@ class Controller {
         }
 
         // Filter manifest: OR within each group, AND between groups
+        const MIN_ROUNDS = 1000;
         const filtered = this.manifestExperiments.filter(exp => {
+            if ((exp.rounds || 0) < MIN_ROUNDS) return false;
             const f = exp.filters || {};
             for (const group of this._filterGroups) {
                 const selected = activeFilters[group];

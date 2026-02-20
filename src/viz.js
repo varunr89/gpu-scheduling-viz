@@ -8,6 +8,8 @@ import { HeatmapModal } from './heatmap-modal.js';
 import { buildWorkload, computeRoundMetrics } from './fragmentation.js';
 import { ResultsChart } from './results-chart.js';
 
+const MIN_ROUNDS = 1000;
+
 class Controller {
     constructor() {
         this.model = new Model();
@@ -489,7 +491,6 @@ class Controller {
         }
 
         // Filter manifest: OR within each group, AND between groups
-        const MIN_ROUNDS = 1000;
         const filtered = this.manifestExperiments.filter(exp => {
             if ((exp.rounds || 0) < MIN_ROUNDS) return false;
             const f = exp.filters || {};
@@ -528,6 +529,7 @@ class Controller {
 
             const available = new Map();
             for (const exp of this.manifestExperiments) {
+                if ((exp.rounds || 0) < MIN_ROUNDS) continue;
                 const f = exp.filters || {};
                 let matches = true;
                 for (const otherGroup of this._filterGroups) {

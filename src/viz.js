@@ -22,10 +22,10 @@ class Controller {
         // Chart data (precomputed on sim load)
         this.chartData = [null, null];  // Per-sim: { occupancy[], effectiveUtil[], movingJct[], queueLen[], completedJobs[] }
         // Grouped filters: OR within group, AND between groups
-        this._filterGroups = ['date', 'type', 'trace', 'figure', 'load', 'seed'];
+        this._filterGroups = ['date', 'type', 'trace', 'figure', 'algorithm', 'load', 'seed'];
         this._activeFilters = [
-            { date: new Set(), type: new Set(), trace: new Set(), load: new Set(), seed: new Set() },
-            { date: new Set(), type: new Set(), trace: new Set(), load: new Set(), seed: new Set() },
+            { date: new Set(), type: new Set(), trace: new Set(), figure: new Set(), algorithm: new Set(), load: new Set(), seed: new Set() },
+            { date: new Set(), type: new Set(), trace: new Set(), figure: new Set(), algorithm: new Set(), load: new Set(), seed: new Set() },
         ];
         this._resultsCharts = []; // Active ResultsChart instances for Results tab
 

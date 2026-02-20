@@ -1,62 +1,6 @@
 {
   "experiments": [
     {
-      "file": "fgd_alibaba_baseline_strided_60jph_s0.viz.bin",
-      "label": "2026-02-07 | FGD-Placement | Alibaba | Baseline | 60jph | s0 | 5114r",
-      "filters": {
-        "date": "2026-02-07",
-        "trace": "alibaba",
-        "load": "60jph",
-        "seed": "s0",
-        "figure": "fgd-placement",
-        "algorithm": "baseline"
-      },
-      "rounds": 5114,
-      "complete": true
-    },
-    {
-      "file": "fgd_alibaba_baseline_strided_60jph_s1.viz.bin",
-      "label": "2026-02-07 | FGD-Placement | Alibaba | Baseline | 60jph | s1 | 5291r",
-      "filters": {
-        "date": "2026-02-07",
-        "trace": "alibaba",
-        "load": "60jph",
-        "seed": "s1",
-        "figure": "fgd-placement",
-        "algorithm": "baseline"
-      },
-      "rounds": 5291,
-      "complete": true
-    },
-    {
-      "file": "fgd_alibaba_baseline_strided_60jph_s2.viz.bin",
-      "label": "2026-02-07 | FGD-Placement | Alibaba | Baseline | 60jph | s2 | 5368r",
-      "filters": {
-        "date": "2026-02-07",
-        "trace": "alibaba",
-        "load": "60jph",
-        "seed": "s2",
-        "figure": "fgd-placement",
-        "algorithm": "baseline"
-      },
-      "rounds": 5368,
-      "complete": true
-    },
-    {
-      "file": "fgd_alibaba_gavel_strided_60jph_s0.viz.bin",
-      "label": "2026-02-07 | FGD-Placement | Alibaba | Gavel | 60jph | s0 | 5342r",
-      "filters": {
-        "date": "2026-02-07",
-        "trace": "alibaba",
-        "load": "60jph",
-        "seed": "s0",
-        "figure": "fgd-placement",
-        "algorithm": "gavel"
-      },
-      "rounds": 5342,
-      "complete": true
-    },
-    {
       "file": "fgd_alibaba_gavel_strided_60jph_s1.viz.bin",
       "label": "2026-02-07 | FGD-Placement | Alibaba | Gavel | 60jph | s1 | 4542r",
       "filters": {
@@ -124,90 +68,6 @@
         "algorithm": "gavel-random"
       },
       "rounds": 5458,
-      "complete": true
-    },
-    {
-      "file": "fgd_alibaba_gavel_fgd_60jph_s0.viz.bin",
-      "label": "2026-02-07 | FGD-Placement | Alibaba | Gavel+FGD | 60jph | s0 | 4920r",
-      "filters": {
-        "date": "2026-02-07",
-        "trace": "alibaba",
-        "load": "60jph",
-        "seed": "s0",
-        "figure": "fgd-placement",
-        "algorithm": "gavel+fgd"
-      },
-      "rounds": 4920,
-      "complete": true
-    },
-    {
-      "file": "fgd_alibaba_gavel_bestfit_60jph_s0.viz.bin",
-      "label": "2026-02-07 | FGD-Placement | Alibaba | Gavel-Bestfit | 60jph | s0 | 5524r",
-      "filters": {
-        "date": "2026-02-07",
-        "trace": "alibaba",
-        "load": "60jph",
-        "seed": "s0",
-        "figure": "fgd-placement",
-        "algorithm": "gavel-bestfit"
-      },
-      "rounds": 5524,
-      "complete": true
-    },
-    {
-      "file": "fgd_alibaba_gavel_bestfit_60jph_s1.viz.bin",
-      "label": "2026-02-07 | FGD-Placement | Alibaba | Gavel-Bestfit | 60jph | s1 | 5664r",
-      "filters": {
-        "date": "2026-02-07",
-        "trace": "alibaba",
-        "load": "60jph",
-        "seed": "s1",
-        "figure": "fgd-placement",
-        "algorithm": "gavel-bestfit"
-      },
-      "rounds": 5664,
-      "complete": true
-    },
-    {
-      "file": "fgd_alibaba_gavel_bestfit_60jph_s2.viz.bin",
-      "label": "2026-02-07 | FGD-Placement | Alibaba | Gavel-Bestfit | 60jph | s2 | 5700r",
-      "filters": {
-        "date": "2026-02-07",
-        "trace": "alibaba",
-        "load": "60jph",
-        "seed": "s2",
-        "figure": "fgd-placement",
-        "algorithm": "gavel-bestfit"
-      },
-      "rounds": 5700,
-      "complete": true
-    },
-    {
-      "file": "fgd_alibaba_gavel_fgd_60jph_s1.viz.bin",
-      "label": "2026-02-07 | FGD-Placement | Alibaba | Gavel+FGD | 60jph | s1 | 5025r",
-      "filters": {
-        "date": "2026-02-07",
-        "trace": "alibaba",
-        "load": "60jph",
-        "seed": "s1",
-        "figure": "fgd-placement",
-        "algorithm": "gavel+fgd"
-      },
-      "rounds": 5025,
-      "complete": true
-    },
-    {
-      "file": "fgd_alibaba_gavel_fgd_60jph_s2.viz.bin",
-      "label": "2026-02-07 | FGD-Placement | Alibaba | Gavel+FGD | 60jph | s2 | 5045r",
-      "filters": {
-        "date": "2026-02-07",
-        "trace": "alibaba",
-        "load": "60jph",
-        "seed": "s2",
-        "figure": "fgd-placement",
-        "algorithm": "gavel+fgd"
-      },
-      "rounds": 5045,
       "complete": true
     },
     {
@@ -883,20 +743,6 @@
       "complete": true
     },
     {
-      "file": "det_gavel_60jph.viz.bin",
-      "label": "2026-02-14 | FGD-Scale | Alibaba | Gavel | 60jph | s0 | 4423r",
-      "filters": {
-        "date": "2026-02-14",
-        "trace": "alibaba",
-        "load": "60jph",
-        "seed": "s0",
-        "figure": "fgd-scale",
-        "algorithm": "gavel"
-      },
-      "rounds": 4423,
-      "complete": true
-    },
-    {
       "file": "det_fgd_60jph.viz.bin",
       "label": "2026-02-14 | FGD-Scale | Alibaba | FGD | 60jph | s0 | 1221r",
       "filters": {
@@ -909,34 +755,6 @@
       },
       "rounds": 1221,
       "complete": false
-    },
-    {
-      "file": "det_gavelfgd_60jph.viz.bin",
-      "label": "2026-02-14 | FGD-Scale | Alibaba | Gavel+FGD | 60jph | s0 | 4423r",
-      "filters": {
-        "date": "2026-02-14",
-        "trace": "alibaba",
-        "load": "60jph",
-        "seed": "s0",
-        "figure": "fgd-scale",
-        "algorithm": "gavel+fgd"
-      },
-      "rounds": 4423,
-      "complete": true
-    },
-    {
-      "file": "det_gavel_110jph.viz.bin",
-      "label": "2026-02-14 | FGD-Scale | Alibaba | Gavel | 110jph | s0 | 4677r",
-      "filters": {
-        "date": "2026-02-14",
-        "trace": "alibaba",
-        "load": "110jph",
-        "seed": "s0",
-        "figure": "fgd-scale",
-        "algorithm": "gavel"
-      },
-      "rounds": 4677,
-      "complete": true
     },
     {
       "file": "det_fgd_110jph.viz.bin",
@@ -953,34 +771,6 @@
       "complete": false
     },
     {
-      "file": "det_gavelfgd_110jph.viz.bin",
-      "label": "2026-02-14 | FGD-Scale | Alibaba | Gavel+FGD | 110jph | s0 | 4677r",
-      "filters": {
-        "date": "2026-02-14",
-        "trace": "alibaba",
-        "load": "110jph",
-        "seed": "s0",
-        "figure": "fgd-scale",
-        "algorithm": "gavel+fgd"
-      },
-      "rounds": 4677,
-      "complete": true
-    },
-    {
-      "file": "det_gavel_160jph.viz.bin",
-      "label": "2026-02-14 | FGD-Scale | Alibaba | Gavel | 160jph | s0 | 4882r",
-      "filters": {
-        "date": "2026-02-14",
-        "trace": "alibaba",
-        "load": "160jph",
-        "seed": "s0",
-        "figure": "fgd-scale",
-        "algorithm": "gavel"
-      },
-      "rounds": 4882,
-      "complete": true
-    },
-    {
       "file": "det_fgd_160jph.viz.bin",
       "label": "2026-02-14 | FGD-Scale | Alibaba | FGD | 160jph | s0 | 2739r",
       "filters": {
@@ -995,34 +785,6 @@
       "complete": false
     },
     {
-      "file": "det_gavelfgd_160jph.viz.bin",
-      "label": "2026-02-14 | FGD-Scale | Alibaba | Gavel+FGD | 160jph | s0 | 4882r",
-      "filters": {
-        "date": "2026-02-14",
-        "trace": "alibaba",
-        "load": "160jph",
-        "seed": "s0",
-        "figure": "fgd-scale",
-        "algorithm": "gavel+fgd"
-      },
-      "rounds": 4882,
-      "complete": true
-    },
-    {
-      "file": "det_gavel_210jph.viz.bin",
-      "label": "2026-02-14 | FGD-Scale | Alibaba | Gavel | 210jph | s0 | 4304r",
-      "filters": {
-        "date": "2026-02-14",
-        "trace": "alibaba",
-        "load": "210jph",
-        "seed": "s0",
-        "figure": "fgd-scale",
-        "algorithm": "gavel"
-      },
-      "rounds": 4304,
-      "complete": true
-    },
-    {
       "file": "det_fgd_210jph.viz.bin",
       "label": "2026-02-14 | FGD-Scale | Alibaba | FGD | 210jph | s0 | 3278r",
       "filters": {
@@ -1035,62 +797,6 @@
       },
       "rounds": 3278,
       "complete": false
-    },
-    {
-      "file": "det_gavelfgd_210jph.viz.bin",
-      "label": "2026-02-14 | FGD-Scale | Alibaba | Gavel+FGD | 210jph | s0 | 4304r",
-      "filters": {
-        "date": "2026-02-14",
-        "trace": "alibaba",
-        "load": "210jph",
-        "seed": "s0",
-        "figure": "fgd-scale",
-        "algorithm": "gavel+fgd"
-      },
-      "rounds": 4304,
-      "complete": true
-    },
-    {
-      "file": "det_gavel_260jph.viz.bin",
-      "label": "2026-02-14 | FGD-Scale | Alibaba | Gavel | 260jph | s0 | 4483r",
-      "filters": {
-        "date": "2026-02-14",
-        "trace": "alibaba",
-        "load": "260jph",
-        "seed": "s0",
-        "figure": "fgd-scale",
-        "algorithm": "gavel"
-      },
-      "rounds": 4483,
-      "complete": true
-    },
-    {
-      "file": "det_fgd_260jph.viz.bin",
-      "label": "2026-02-14 | FGD-Scale | Alibaba | FGD | 260jph | s0 | 4079r",
-      "filters": {
-        "date": "2026-02-14",
-        "trace": "alibaba",
-        "load": "260jph",
-        "seed": "s0",
-        "figure": "fgd-scale",
-        "algorithm": "fgd"
-      },
-      "rounds": 4079,
-      "complete": false
-    },
-    {
-      "file": "det_gavelfgd_260jph.viz.bin",
-      "label": "2026-02-14 | FGD-Scale | Alibaba | Gavel+FGD | 260jph | s0 | 4483r",
-      "filters": {
-        "date": "2026-02-14",
-        "trace": "alibaba",
-        "load": "260jph",
-        "seed": "s0",
-        "figure": "fgd-scale",
-        "algorithm": "gavel+fgd"
-      },
-      "rounds": 4483,
-      "complete": true
     },
     {
       "file": "det_gavel_310jph.viz.bin",
@@ -1132,48 +838,6 @@
         "algorithm": "gavel+fgd"
       },
       "rounds": 3628,
-      "complete": true
-    },
-    {
-      "file": "det_gavel_360jph.viz.bin",
-      "label": "2026-02-14 | FGD-Scale | Alibaba | Gavel | 360jph | s0 | 5137r",
-      "filters": {
-        "date": "2026-02-14",
-        "trace": "alibaba",
-        "load": "360jph",
-        "seed": "s0",
-        "figure": "fgd-scale",
-        "algorithm": "gavel"
-      },
-      "rounds": 5137,
-      "complete": true
-    },
-    {
-      "file": "det_fgd_360jph.viz.bin",
-      "label": "2026-02-14 | FGD-Scale | Alibaba | FGD | 360jph | s0 | 4873r",
-      "filters": {
-        "date": "2026-02-14",
-        "trace": "alibaba",
-        "load": "360jph",
-        "seed": "s0",
-        "figure": "fgd-scale",
-        "algorithm": "fgd"
-      },
-      "rounds": 4873,
-      "complete": true
-    },
-    {
-      "file": "det_gavelfgd_360jph.viz.bin",
-      "label": "2026-02-14 | FGD-Scale | Alibaba | Gavel+FGD | 360jph | s0 | 5137r",
-      "filters": {
-        "date": "2026-02-14",
-        "trace": "alibaba",
-        "load": "360jph",
-        "seed": "s0",
-        "figure": "fgd-scale",
-        "algorithm": "gavel+fgd"
-      },
-      "rounds": 5137,
       "complete": true
     },
     {

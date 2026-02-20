@@ -10,6 +10,11 @@ import { ResultsChart } from './results-chart.js';
 
 const MIN_ROUNDS = 1000;
 
+// .viz.bin files are hosted on Azure Blob Storage; use ?local for local data/ fallback
+const DATA_BASE_URL = new URLSearchParams(window.location.search).has('local')
+    ? 'data/'
+    : 'https://gpuschedulingviz.blob.core.windows.net/vizdata/';
+
 class Controller {
     constructor() {
         this.model = new Model();
@@ -283,7 +288,7 @@ class Controller {
         }
 
         try {
-            const resp = await fetch(`data/${file}`);
+            const resp = await fetch(`${DATA_BASE_URL}${file}`);
             if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
             const arrayBuffer = await resp.arrayBuffer();
             this._loadFromBuffer(simIndex, arrayBuffer);
@@ -511,7 +516,7 @@ class Controller {
         const defaults = ['fig9_perf_high.viz.bin', 'fig9_mmf_high.viz.bin'];
         for (let i = 0; i < defaults.length; i++) {
             try {
-                const resp = await fetch(`data/${defaults[i]}`);
+                const resp = await fetch(`${DATA_BASE_URL}${defaults[i]}`);
                 if (!resp.ok) continue;
                 const arrayBuffer = await resp.arrayBuffer();
                 this._loadFromBuffer(i, arrayBuffer);
@@ -686,7 +691,7 @@ class Controller {
         const simIndex = 0;
 
         // Fetch and load the .viz.bin
-        fetch(`data/${file}`)
+        fetch(`${DATA_BASE_URL}${file}`)
             .then(resp => {
                 if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
                 return resp.arrayBuffer();

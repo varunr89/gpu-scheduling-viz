@@ -161,6 +161,72 @@ body {
   font-weight: 600;
 }
 
+.exp-filter-help {
+  font-size: 0.55rem;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid var(--text-secondary);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+  font-weight: 700;
+  line-height: 1;
+  transition: all 0.12s;
+}
+
+.exp-filter-help:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.exp-help-popup {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 100;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.5rem 0.65rem;
+  min-width: 320px;
+  max-width: 420px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  margin-top: 0.3rem;
+}
+
+.exp-help-item {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  align-items: baseline;
+}
+
+.exp-help-item + .exp-help-item {
+  border-top: 1px solid var(--border-color);
+}
+
+.exp-help-name {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+.exp-help-desc {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  line-height: 1.35;
+}
+
 .exp-picker-select {
   background: var(--btn-bg);
   color: var(--text-primary);

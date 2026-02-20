@@ -397,7 +397,19 @@ class Controller {
         }
 
         // Sort values within each group
-        const groupLabels = { date: 'Date', type: 'Type', trace: 'Trace', load: 'Load', seed: 'Seed' };
+        const groupLabels = { date: 'Date', trace: 'Trace', figure: 'Figure', algorithm: 'Algo', load: 'Load', seed: 'Seed' };
+        const groupHelp = {
+            algorithm: {
+                'gavel': 'Gavel scheduler -- optimized max-min fairness (Fig 9/10) or finish-time fairness (Fig 11)',
+                'baseline': 'Non-optimized fair-share baseline (max-min fairness for Fig 9/10, finish-time fairness for Fig 11)',
+                'fifo': 'First-in-first-out scheduling (Tiresias)',
+                'packed': 'Max-min fairness with job packing across GPU types',
+                'gavel+fgd': 'Gavel scheduling with fragmentation-aware (FGD) GPU placement',
+                'gavel-random': 'Gavel scheduling with random GPU placement',
+                'gavel-bestfit': 'Gavel scheduling with best-fit GPU placement',
+                'fgd': 'FGD placement only (no Gavel scheduling)',
+            },
+        };
         const sortedValues = {};
         for (const group of this._filterGroups) {
             const vals = [...groupValues[group]];
@@ -429,6 +441,43 @@ class Controller {
                 label.className = 'exp-filter-label';
                 label.textContent = groupLabels[group];
                 row.appendChild(label);
+
+                // Add '?' help button for groups with descriptions
+                if (groupHelp[group]) {
+                    const helpBtn = document.createElement('button');
+                    helpBtn.className = 'exp-filter-help';
+                    helpBtn.textContent = '?';
+                    helpBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        // Remove any existing popup
+                        const old = document.querySelector('.exp-help-popup');
+                        if (old) { old.remove(); }
+                        // Build popup
+                        const popup = document.createElement('div');
+                        popup.className = 'exp-help-popup';
+                        const entries = groupHelp[group];
+                        for (const [key, desc] of Object.entries(entries)) {
+                            const item = document.createElement('div');
+                            item.className = 'exp-help-item';
+                            const name = document.createElement('span');
+                            name.className = 'exp-help-name';
+                            name.textContent = key;
+                            const text = document.createElement('span');
+                            text.className = 'exp-help-desc';
+                            text.textContent = desc;
+                            item.appendChild(name);
+                            item.appendChild(text);
+                            popup.appendChild(item);
+                        }
+                        // Position near the button
+                        row.style.position = 'relative';
+                        row.appendChild(popup);
+                        // Dismiss on outside click
+                        const dismiss = () => { popup.remove(); document.removeEventListener('click', dismiss); };
+                        setTimeout(() => document.addEventListener('click', dismiss), 0);
+                    });
+                    row.appendChild(helpBtn);
+                }
 
                 const btnWrap = document.createElement('div');
                 btnWrap.className = 'exp-filter-buttons';

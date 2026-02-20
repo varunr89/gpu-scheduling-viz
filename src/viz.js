@@ -22,10 +22,10 @@ class Controller {
         // Chart data (precomputed on sim load)
         this.chartData = [null, null];  // Per-sim: { occupancy[], effectiveUtil[], movingJct[], queueLen[], completedJobs[] }
         // Grouped filters: OR within group, AND between groups
-        this._filterGroups = ['date', 'type', 'trace', 'figure', 'algorithm', 'load', 'seed'];
+        this._filterGroups = ['date', 'trace', 'figure', 'algorithm', 'load', 'seed'];
         this._activeFilters = [
-            { date: new Set(), type: new Set(), trace: new Set(), figure: new Set(), algorithm: new Set(), load: new Set(), seed: new Set() },
-            { date: new Set(), type: new Set(), trace: new Set(), figure: new Set(), algorithm: new Set(), load: new Set(), seed: new Set() },
+            { date: new Set(), trace: new Set(), figure: new Set(), algorithm: new Set(), load: new Set(), seed: new Set() },
+            { date: new Set(), trace: new Set(), figure: new Set(), algorithm: new Set(), load: new Set(), seed: new Set() },
         ];
         this._resultsCharts = []; // Active ResultsChart instances for Results tab
 
@@ -568,10 +568,10 @@ class Controller {
         this._resultsCharts = [];
 
         // Determine which result sets to show based on active filter selections
-        // Use picker 0's filters as the "global" filter for results
-        const typeFilter = this._activeFilters[0].type;
-        const showGavel = typeFilter.size === 0 || typeFilter.has('gavel');
-        const showFgd = typeFilter.size === 0 || typeFilter.has('fgd');
+        // Use trace filter: philly -> gavel results, alibaba -> fgd results
+        const traceFilter = this._activeFilters[0].trace;
+        const showGavel = traceFilter.size === 0 || traceFilter.has('philly');
+        const showFgd = traceFilter.size === 0 || traceFilter.has('alibaba');
 
         const sections = [];
         if (showGavel && this.manifestResults.gavel) {

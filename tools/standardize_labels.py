@@ -3,142 +3,146 @@
 
 Label format: Date | Figure | Trace | Algorithm | Load | Seed | Roundsr
 
-Adds 'figure' and 'algorithm' filters to all experiments.
+Changes:
+- Drops 'type' filter (redundant with trace + figure)
+- Merges gavel_replication into gavel
+- Collapses algorithm to 8 values: Gavel, Baseline, FIFO, Packed,
+  Gavel+FGD, Gavel-Random, Gavel-Bestfit, FGD
+- Renames policy names to paper names (MaxMinFairness -> Baseline, etc.)
+- Assigns clean figure names: Fig9, Fig10, Fig11, FGD-Placement, FGD-Scale
+- Excludes DevTest and Migration experiments (data files kept, removed from manifest)
+- Merges LoadSweep + CombinedSweep into FGD-Scale
 """
 
 import json
 import re
-import sys
 from pathlib import Path
 
+# Figures to exclude from the manifest entirely
+EXCLUDED_FIGURES = {'devtest', 'migration'}
 
-def determine_figure_and_algorithm(exp):
-    """Determine the figure group and algorithm for an experiment."""
+
+def classify(exp):
+    """Return (figure, algorithm) for an experiment, or None to exclude it."""
     filters = exp['filters']
-    label = exp['label']
+    old_label = exp.get('_old_label', exp['label'])
     fname = exp['file']
-    exp_type = filters['type']
+    exp_type = filters.get('type', '')
 
+    # --- Determine figure ---
     figure = None
-    algorithm = None
 
-    # --- gavel_replication type (30 experiments with policy filter) ---
+    # gavel_replication type: has figure in filters already
     if exp_type == 'gavel_replication':
-        figure = filters.get('figure', '').capitalize()
-        # e.g. 'fig10' -> 'Fig10'
-        if figure.startswith('Fig'):
-            pass  # already good
+        raw_fig = filters.get('figure', '')
+        figure = 'Fig' + raw_fig[3:] if raw_fig.startswith('fig') else raw_fig.capitalize()
+
+    # combined type: load sweep on Alibaba
+    elif exp_type == 'combined':
+        figure = 'FGD-Scale'
+
+    # fgd type: determine from old label
+    elif exp_type == 'fgd':
+        # Classify by what the experiment tests
+        if any(old_label.startswith(p) for p in (
+                'Baseline Strided', 'Gavel Strided', 'Gavel Random',
+                'Gavel Bestfit', 'Gavel+FGD')):
+            figure = 'FGD-Placement'
+        elif old_label.startswith('FGD+Migration'):
+            figure = 'Migration'  # will be excluded
+        elif old_label.startswith('FGD-only'):
+            figure = 'FGD-Scale'
         else:
-            figure = 'Fig' + figure.lstrip('fig')
+            figure = 'DevTest'  # will be excluded
 
-        policy = filters.get('policy', '')
-        policy_map = {
-            'max_min_fairness': 'MaxMinFairness',
-            'max_min_fairness_perf': 'MaxMinFairness-Perf',
-            'finish_time_fairness': 'FinishTimeFairness',
-            'finish_time_fairness_perf': 'FinishTimeFairness-Perf',
-        }
-        algorithm = policy_map.get(policy, policy)
-        return figure, algorithm
-
-    # --- combined type (7 experiments) ---
-    if exp_type == 'combined':
-        figure = 'CombinedSweep'
-        algorithm = 'Gavel+FGD'
-        return figure, algorithm
-
-    # --- fgd type (61 experiments) ---
-    if exp_type == 'fgd':
-        # Determine algorithm from label
-        fgd_algo_map = [
-            ('Baseline Strided', 'Baseline-Strided'),
-            ('Gavel Strided', 'Gavel-Strided'),
-            ('Gavel Random', 'Gavel-Random'),
-            ('Gavel Bestfit', 'Gavel-Bestfit'),
-            ('Gavel+FGD', 'Gavel+FGD'),
-            ('FGD+Migration', 'FGD+Migration'),
-            ('FGD-only', 'FGD-Only'),
-            ('FIFO + FGD Placement', 'FIFO+FGD'),
-            ('FIFO + Random Placement', 'FIFO+Random'),
-            ('GPU Sharing Test', 'GPU-Sharing'),
-            ('Load Sweep Test + GPU Sharing', 'LoadSweep+Sharing'),
-            ('Load Sweep Test', 'LoadSweep-Test'),
-        ]
-        algorithm = label  # fallback
-        for prefix, algo in fgd_algo_map:
-            if label.startswith(prefix):
-                algorithm = algo
-                break
-
-        # Determine figure group
-        if algorithm in ('Baseline-Strided', 'Gavel-Strided', 'Gavel-Random',
-                         'Gavel-Bestfit', 'Gavel+FGD'):
-            figure = 'Placement'
-        elif algorithm == 'FGD+Migration':
-            figure = 'Migration'
-        elif algorithm == 'FGD-Only':
-            figure = 'LoadSweep'
-        else:
-            figure = 'DevTest'
-
-        return figure, algorithm
-
-    # --- gavel type (345 experiments) ---
-    if exp_type == 'gavel':
-        # Extract figure from filename or label
+    # gavel type
+    elif exp_type == 'gavel':
+        # Try to get figure from filename
         fig_match = re.search(r'(fig\d+)', fname, re.IGNORECASE)
         if fig_match:
             fig_num = fig_match.group(1).lower()
-            figure = 'Fig' + fig_num[3:]  # fig10 -> Fig10
-        elif label.startswith('Fig'):
-            fig_match2 = re.match(r'(Fig\d+)', label)
-            if fig_match2:
-                figure = fig_match2.group(1)
+            figure = 'Fig' + fig_num[3:]
+        # Try from label
+        elif old_label.startswith('Fig'):
+            m = re.match(r'(Fig\d+)', old_label)
+            if m:
+                figure = m.group(1)
+        # No figure info: classify by trace
+        elif filters.get('trace') == 'alibaba':
+            figure = 'FGD-Scale'
+        else:
+            figure = 'DevTest'  # will be excluded
 
-        # Extract algorithm
-        # For gavel_replication/ folder files, extract from filename
+    if figure is None:
+        figure = 'Unknown'
+
+    # Check exclusion
+    if figure.lower() in EXCLUDED_FIGURES:
+        return None
+
+    # --- Determine algorithm ---
+    algorithm = None
+
+    if exp_type == 'gavel_replication':
+        # Map policy names to paper names
+        # max_min_fairness = Baseline (fig9/10), finish_time_fairness = FIFO (fig11)
+        policy = filters.get('policy', '')
+        algorithm = {
+            'max_min_fairness': 'Baseline',
+            'max_min_fairness_perf': 'Gavel',
+            'finish_time_fairness': 'FIFO',
+            'finish_time_fairness_perf': 'Gavel',
+        }.get(policy, policy)
+
+    elif exp_type == 'combined':
+        algorithm = 'Gavel+FGD'
+
+    elif exp_type == 'fgd':
+        # Map from old label prefix
+        for prefix, algo in [
+            ('Baseline Strided', 'Baseline'),
+            ('Gavel Strided', 'Gavel'),
+            ('Gavel Random', 'Gavel-Random'),
+            ('Gavel Bestfit', 'Gavel-Bestfit'),
+            ('Gavel+FGD', 'Gavel+FGD'),
+            ('FGD-only', 'FGD'),
+        ]:
+            if old_label.startswith(prefix):
+                algorithm = algo
+                break
+        if algorithm is None:
+            algorithm = old_label.split()[0]
+
+    elif exp_type == 'gavel':
+        # From gavel_replication/ folder files: extract policy from filename
         if fname.startswith('gavel_replication/'):
-            # e.g. gavel_repl_fig10_max_min_fairness_packed_0.8jph_multi_s0.viz.bin
-            # Extract policy from between fig\d+_ and _\d+\.?\d*jph
             policy_match = re.search(
                 r'gavel_repl_fig\d+_(.+?)_\d+\.?\d*jph', fname)
             if policy_match:
                 policy_str = policy_match.group(1)
-                policy_algo_map = {
+                algorithm = {
                     'max_min_fairness': 'Baseline',
                     'max_min_fairness_perf': 'Gavel',
                     'max_min_fairness_packed': 'Packed',
                     'finish_time_fairness': 'FIFO',
                     'finish_time_fairness_perf': 'Gavel',
-                }
-                algorithm = policy_algo_map.get(policy_str, policy_str)
-        elif 'Repl' in label:
-            # "Gavel Repl: Fig9 Perf 4.0jph s0" -> Gavel
+                }.get(policy_str, policy_str)
+        elif 'Repl' in old_label:
             algorithm = 'Gavel'
         else:
-            # Extract from label: "Fig10 Gavel High" or "Gavel 0.6jph"
-            # Remove the Fig prefix if present
-            stripped = re.sub(r'^Fig\d+\s+', '', label)
-            # First word is the algorithm
-            first_word = stripped.split()[0] if stripped else label
+            # From label: "Fig10 Gavel High" -> Gavel, "Gavel 60jph" -> Gavel
+            stripped = re.sub(r'^Fig\d+\s+', '', old_label)
+            first_word = stripped.split()[0] if stripped else ''
             if first_word in ('Gavel', 'Baseline', 'Packed', 'FIFO'):
                 algorithm = first_word
 
-        # Handle no-fig gavel experiments
-        if figure is None:
-            trace = filters.get('trace', '')
-            if trace == 'alibaba':
-                figure = 'LoadSweep'
-            else:
-                # Early philly experiments (perf_0.6jph, fairness_0.6jph)
-                figure = 'DevTest'
-
         if algorithm is None:
-            algorithm = label.split()[0]
+            algorithm = old_label.split()[0]
 
-        return figure, algorithm
+    else:
+        algorithm = 'Unknown'
 
-    return figure or 'Unknown', algorithm or 'Unknown'
+    return figure, algorithm
 
 
 def build_label(exp, figure, algorithm):
@@ -157,51 +161,73 @@ def main():
     with open(manifest_path) as f:
         manifest = json.load(f)
 
-    experiments = manifest['experiments']
-    changes = []
+    old_experiments = manifest['experiments']
+    new_experiments = []
+    excluded = []
 
-    for exp in experiments:
-        old_label = exp['label']
-        figure, algorithm = determine_figure_and_algorithm(exp)
+    for exp in old_experiments:
+        # Save old label for classification (labels were already standardized once)
+        # Parse the old label to extract info if needed
+        exp['_old_label'] = exp['label']
+        result = classify(exp)
+
+        if result is None:
+            excluded.append(exp['label'])
+            continue
+
+        figure, algorithm = result
         new_label = build_label(exp, figure, algorithm)
 
-        # Add figure and algorithm to filters
+        # Clean up filters: remove 'type', add/update figure and algorithm
+        exp['filters'].pop('type', None)
         exp['filters']['figure'] = figure.lower()
         exp['filters']['algorithm'] = algorithm.lower()
 
-        if old_label != new_label:
-            changes.append((old_label, new_label))
         exp['label'] = new_label
+        del exp['_old_label']
+        new_experiments.append(exp)
+
+    manifest['experiments'] = new_experiments
 
     # Write updated manifest
     with open(manifest_path, 'w') as f:
         json.dump(manifest, f, indent=2)
         f.write('\n')
 
-    print(f"Updated {len(changes)} labels out of {len(experiments)} experiments")
+    print(f"Kept {len(new_experiments)} experiments, excluded {len(excluded)}")
     print()
 
-    # Show sample of changes per type
-    print("=== Sample changes ===")
-    shown = 0
-    for old, new in changes:
-        if shown < 20:
-            print(f"  {old}")
-            print(f"  -> {new}")
-            print()
-            shown += 1
+    if excluded:
+        print(f"=== Excluded ({len(excluded)}) ===")
+        for label in excluded:
+            print(f"  {label}")
+        print()
 
-    if len(changes) > 20:
-        print(f"  ... and {len(changes) - 20} more")
+    # Show samples by figure
+    from collections import defaultdict
+    by_fig = defaultdict(list)
+    for e in new_experiments:
+        by_fig[e['filters']['figure']].append(e)
+
+    for fig in sorted(by_fig):
+        exps = by_fig[fig]
+        algos = sorted(set(e['filters']['algorithm'] for e in exps))
+        print(f"=== {fig} ({len(exps)} exps, algos: {algos}) ===")
+        for e in exps[:2]:
+            print(f"  {e['label']}")
+        if len(exps) > 2:
+            print(f"  ... and {len(exps) - 2} more")
+        print()
 
     # Validate: check for duplicate labels
-    labels = [e['label'] for e in experiments]
-    dupes = [l for l in labels if labels.count(l) > 1]
+    labels = [e['label'] for e in new_experiments]
+    dupes = set(l for l in labels if labels.count(l) > 1)
     if dupes:
-        print(f"\nWARNING: {len(set(dupes))} duplicate labels found:")
-        for d in sorted(set(dupes)):
-            count = labels.count(d)
-            print(f"  ({count}x) {d}")
+        print(f"WARNING: {len(dupes)} duplicate labels found:")
+        for d in sorted(dupes):
+            print(f"  ({labels.count(d)}x) {d}")
+    else:
+        print("No duplicate labels.")
 
 
 if __name__ == '__main__':

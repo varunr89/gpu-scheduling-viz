@@ -8,10 +8,11 @@ import { HeatmapModal } from './heatmap-modal.js';
 import { buildWorkload, computeRoundMetrics } from './fragmentation.js';
 import { ResultsChart } from './results-chart.js';
 
-const MIN_ROUNDS = 1000;
+const IS_LOCAL = new URLSearchParams(window.location.search).has('local');
+const MIN_ROUNDS = IS_LOCAL ? 0 : 1000;
 
 // .viz.bin files are hosted on Azure Blob Storage; use ?local for local data/ fallback
-const DATA_BASE_URL = new URLSearchParams(window.location.search).has('local')
+const DATA_BASE_URL = IS_LOCAL
     ? 'data/'
     : 'https://gpuschedulingviz.blob.core.windows.net/vizdata/';
 

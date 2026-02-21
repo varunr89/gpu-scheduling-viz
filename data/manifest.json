@@ -5771,6 +5771,20 @@
       },
       "rounds": 3000,
       "complete": true
+    },
+    {
+      "file": "fgd_repl_test_fgd_10jph_s0.viz.bin",
+      "label": "2026-02-21 | FGD-Replication | Alibaba-mini | FGD | 10jph | s0 | 25r",
+      "filters": {
+        "date": "2026-02-21",
+        "trace": "alibaba",
+        "load": "10jph",
+        "seed": "s0",
+        "figure": "fgd-replication",
+        "algorithm": "fgd"
+      },
+      "rounds": 25,
+      "complete": false
     }
   ],
   "results": {

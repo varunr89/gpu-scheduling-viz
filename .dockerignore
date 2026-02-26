@@ -1,0 +1,9 @@
+.git
+.venv
+*.pyc
+__pycache__
+.pytest_cache
+workbench/tests/
+workbench/data/
+*.viz.bin
+docs/

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPU Scheduling Workbench</title>
+    <link rel="stylesheet" href="workbench.css">
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-brand">GPU Scheduling Workbench</div>
+        <div class="nav-tabs">
+            <button class="nav-tab active" data-tab="design">1. Design</button>
+            <button class="nav-tab" data-tab="run">2. Run</button>
+            <button class="nav-tab" data-tab="analyze">3. Analyze</button>
+        </div>
+    </nav>
+
+    <main class="tab-content">
+        <!-- Design Tab -->
+        <section id="tab-design" class="tab-panel active">
+            <div class="panel-layout">
+                <aside class="sidebar">
+                    <div class="sidebar-header">
+                        <h3>Experiment Groups</h3>
+                        <button id="btn-new-group" class="btn btn-primary">+ New</button>
+                    </div>
+                    <div id="design-group-list" class="group-list">
+                        <div class="empty-state">No experiments yet. Click "+ New" to create one.</div>
+                    </div>
+                </aside>
+                <div class="main-panel" id="design-main">
+                    <div class="empty-state-large">
+                        <h2>Design Your Experiments</h2>
+                        <p>Select an experiment group or create a new one to get started.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Run Tab -->
+        <section id="tab-run" class="tab-panel">
+            <div class="panel-layout">
+                <aside class="sidebar">
+                    <div class="sidebar-header">
+                        <h3>Experiment Groups</h3>
+                    </div>
+                    <div id="run-group-list" class="group-list">
+                        <div class="empty-state">No experiments to run. Design some first.</div>
+                    </div>
+                </aside>
+                <div class="main-panel" id="run-main">
+                    <div class="empty-state-large">
+                        <h2>Run Experiments</h2>
+                        <p>Select an experiment group to run and monitor.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Analyze Tab -->
+        <section id="tab-analyze" class="tab-panel">
+            <iframe id="viz-iframe" src="/index.html?local" style="width:100%; height:100%; border:none;"></iframe>
+        </section>
+    </main>
+
+    <script type="module" src="workbench.js"></script>
+</body>
+</html>

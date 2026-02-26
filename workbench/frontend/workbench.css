@@ -1086,6 +1086,78 @@ tbody tr:hover {
     white-space: nowrap;
 }
 
+/* Run controls (action buttons row) */
+.run-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+/* Charts grid (2x2 for live mini charts) */
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.charts-grid .chart-wrapper {
+    min-height: 120px;
+}
+
+.charts-grid .chart-wrapper canvas {
+    display: block;
+    width: 100%;
+    height: 120px;
+}
+
+/* Experiment table (Run tab) */
+.experiment-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+}
+
+.experiment-table thead {
+    background: var(--wb-bg-panel);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.experiment-table th {
+    padding: 0.6rem 0.75rem;
+    text-align: left;
+    font-weight: 700;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--wb-text-secondary);
+    border-bottom: 1px solid var(--wb-border);
+    white-space: nowrap;
+}
+
+.experiment-table td {
+    padding: 0.55rem 0.75rem;
+    border-bottom: 1px solid var(--wb-border);
+    color: var(--wb-text-primary);
+    vertical-align: middle;
+}
+
+.experiment-table tr:last-child td {
+    border-bottom: none;
+}
+
+.experiment-table tbody tr:hover {
+    background: var(--wb-bg-hover);
+}
+
+.experiment-row .run-experiment-name {
+    font-family: var(--wb-font-mono);
+    font-size: 0.78rem;
+}
+
 /* ================================================================
    Notifications / Toasts
    ================================================================ */
@@ -1445,6 +1517,14 @@ tbody tr:hover {
 
     .chart-grid {
         grid-template-columns: 1fr;
+    }
+
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .run-controls {
+        flex-wrap: wrap;
     }
 
     .form-row {

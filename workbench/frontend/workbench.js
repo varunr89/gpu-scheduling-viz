@@ -160,6 +160,115 @@ function statusClass(status) {
 }
 
 // ================================================================
+// MiniChart -- Canvas line chart for live monitoring
+// ================================================================
+
+class MiniChart {
+    constructor(canvas, options = {}) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.data = [];
+        this.maxPoints = options.maxPoints || 200;
+        this.label = options.label || '';
+        this.color = options.color || '#6366f1';
+        this.format = options.format || (v => v.toFixed(1));
+    }
+
+    push(value) {
+        this.data.push(value);
+        if (this.data.length > this.maxPoints) this.data.shift();
+        this.draw();
+    }
+
+    reset() {
+        this.data = [];
+        this.draw();
+    }
+
+    draw() {
+        const { ctx, canvas, data } = this;
+        const w = canvas.width;
+        const h = canvas.height;
+        const padding = { top: 24, right: 10, bottom: 20, left: 40 };
+
+        ctx.clearRect(0, 0, w, h);
+
+        // Background
+        ctx.fillStyle = '#1a1a2e';
+        ctx.fillRect(0, 0, w, h);
+
+        // Label
+        ctx.fillStyle = '#e0e0e0';
+        ctx.font = '11px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(this.label, padding.left, 14);
+
+        if (data.length < 2) {
+            // Show "--" when no data
+            ctx.fillStyle = '#666680';
+            ctx.font = '14px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('--', w / 2, h / 2 + 5);
+            ctx.textAlign = 'left';
+            return;
+        }
+
+        const min = Math.min(...data);
+        const max = Math.max(...data);
+        const range = max - min || 1;
+
+        const plotW = w - padding.left - padding.right;
+        const plotH = h - padding.top - padding.bottom;
+
+        // Grid lines
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 0.5;
+        for (let i = 0; i <= 4; i++) {
+            const y = padding.top + (plotH * i / 4);
+            ctx.beginPath();
+            ctx.moveTo(padding.left, y);
+            ctx.lineTo(w - padding.right, y);
+            ctx.stroke();
+        }
+
+        // Current value
+        const lastVal = data[data.length - 1];
+        ctx.fillStyle = this.color;
+        ctx.font = '11px monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText(this.format(lastVal), w - padding.right, 14);
+        ctx.textAlign = 'left';
+
+        // Y-axis labels
+        ctx.fillStyle = '#888';
+        ctx.font = '9px monospace';
+        ctx.fillText(this.format(max), 2, padding.top + 4);
+        ctx.fillText(this.format(min), 2, h - padding.bottom);
+
+        // Data line
+        ctx.beginPath();
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 1.5;
+        for (let i = 0; i < data.length; i++) {
+            const x = padding.left + (plotW * i / (data.length - 1));
+            const y = padding.top + plotH - (plotH * (data[i] - min) / range);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        // Fill under line
+        const lastX = padding.left + plotW;
+        const lastY = padding.top + plotH;
+        ctx.lineTo(lastX, lastY);
+        ctx.lineTo(padding.left, lastY);
+        ctx.closePath();
+        ctx.fillStyle = this.color + '20';
+        ctx.fill();
+    }
+}
+
+// ================================================================
 // Sweep Expansion
 // ================================================================
 
@@ -926,6 +1035,20 @@ class Workbench {
         this._currentSchemaForm = null;
         this._simulatorsCache = null;
 
+        // Run tab state
+        this._activeWs = null;
+        this._charts = {};
+        this._runExperiments = [];       // experiment list for current group
+        this._experimentRows = new Map(); // experiment_id -> {row, statusBadge, progressFill, progressLabel, timeCell}
+        this._completedCount = 0;
+        this._failedCount = 0;
+        this._runningCount = 0;
+        this._runStatEls = {};           // {total, pending, running, complete} -> DOM elements
+        this._runBtnRun = null;
+        this._runBtnCancel = null;
+        this._runBtnExport = null;
+        this._isRunning = false;
+
         this._bindTabNav();
         this._bindNewGroup();
         this._init();
@@ -1343,10 +1466,17 @@ class Workbench {
         }
     }
 
-    _selectRunGroup(groupId) {
+    // ----------------------------------------------------------
+    // Run Tab -- Main Panel
+    // ----------------------------------------------------------
+
+    async _selectRunGroup(groupId) {
+        // Clean up previous WebSocket if switching groups
+        this._cleanupRunState();
+
         this.selectedRunGroupId = groupId;
 
-        // Update active class
+        // Update active class in sidebar
         const list = document.getElementById('run-group-list');
         if (list) {
             list.querySelectorAll('.group-item').forEach(item => {
@@ -1354,7 +1484,6 @@ class Workbench {
             });
         }
 
-        // Update main panel
         const main = document.getElementById('run-main');
         if (!main) return;
 
@@ -1369,48 +1498,544 @@ class Workbench {
             return;
         }
 
+        // Fetch group details (includes experiments list)
+        let groupDetail;
+        try {
+            groupDetail = await api.getGroup(groupId);
+        } catch (err) {
+            console.error('Failed to fetch group details:', err);
+            clearChildren(main);
+            main.appendChild(
+                el('div', { className: 'empty-state-large' },
+                    el('h2', {}, 'Failed to load group'),
+                    el('p', {}, 'Could not connect to the backend.'),
+                )
+            );
+            return;
+        }
+
+        this._runExperiments = groupDetail.experiments || [];
+        this._completedCount = 0;
+        this._failedCount = 0;
+        this._runningCount = 0;
+        this._experimentRows = new Map();
+
         clearChildren(main);
 
-        const runAllBtn = el('button', {
+        // -- Header with status badge --
+        const statusBadge = el('span', {
+            className: `status-badge status-${statusClass(group.status)}`,
+        }, group.status || 'draft');
+        this._runHeaderBadge = statusBadge;
+
+        // -- Action buttons --
+        this._runBtnRun = el('button', {
             className: 'btn btn-success',
-            dataset: { id: group.id },
             onClick: () => this._runGroup(group.id),
         }, 'Run All');
 
-        const monitor = el('div', { className: 'run-monitor' },
-            el('div', { className: 'run-header' },
-                el('h2', {}, group.name),
-                el('div', { className: 'btn-group' }, runAllBtn),
-            ),
-            el('div', { className: 'run-summary' },
-                this._buildRunStat('--', 'Total'),
-                this._buildRunStat('--', 'Pending', 'text-yellow'),
-                this._buildRunStat('--', 'Running', 'text-accent'),
-                this._buildRunStat('--', 'Complete', 'text-green'),
-            ),
-            el('p', { className: 'text-muted', style: { fontSize: '0.85rem' } },
-                'Run monitoring and progress tracking will appear here once the run controller is implemented.',
+        this._runBtnCancel = el('button', {
+            className: 'btn btn-danger',
+            disabled: 'disabled',
+            onClick: () => this._cancelGroup(),
+        }, 'Cancel');
+
+        this._runBtnExport = el('button', {
+            className: 'btn btn-primary',
+            disabled: 'disabled',
+            onClick: () => this._exportGroup(group.id),
+        }, 'Export to Analyze');
+
+        // Disable run if already complete; enable export if complete
+        const isComplete = group.status === 'complete' || group.status === 'completed';
+        const isRunning = group.status === 'running';
+        if (isComplete) {
+            this._runBtnRun.disabled = true;
+            this._runBtnExport.disabled = false;
+        }
+        if (isRunning) {
+            this._runBtnRun.disabled = true;
+            this._runBtnCancel.disabled = false;
+        }
+
+        const controls = el('div', { className: 'run-controls' },
+            this._runBtnRun,
+            this._runBtnCancel,
+            this._runBtnExport,
+        );
+
+        // -- Summary stat cards --
+        const totalCount = this._runExperiments.length;
+        this._runStatEls = {};
+
+        const statTotal = this._buildRunStat(String(totalCount), 'Total');
+        this._runStatEls.total = statTotal.querySelector('.run-stat-value');
+
+        const statPending = this._buildRunStat(String(totalCount), 'Pending', 'text-yellow');
+        this._runStatEls.pending = statPending.querySelector('.run-stat-value');
+
+        const statRunning = this._buildRunStat('0', 'Running', 'text-accent');
+        this._runStatEls.running = statRunning.querySelector('.run-stat-value');
+
+        const statComplete = this._buildRunStat('0', 'Complete', 'text-green');
+        this._runStatEls.complete = statComplete.querySelector('.run-stat-value');
+
+        const summary = el('div', { className: 'run-summary' },
+            statTotal, statPending, statRunning, statComplete,
+        );
+
+        // -- Live charts (2x2 grid) --
+        const chartConfigs = [
+            { key: 'utilization', label: 'Utilization %', color: '#4ecca3', format: v => v.toFixed(1) + '%' },
+            { key: 'queueDepth', label: 'Queue Depth', color: '#ffb347', format: v => Math.round(v).toString() },
+            { key: 'avgJct', label: 'Avg JCT', color: '#6366f1', format: v => v.toFixed(1) + 's' },
+            { key: 'throughput', label: 'Throughput', color: '#4a90d9', format: v => v.toFixed(1) },
+        ];
+
+        this._charts = {};
+        const chartsGrid = el('div', { className: 'charts-grid' });
+
+        for (const cfg of chartConfigs) {
+            const canvas = el('canvas', { width: '400', height: '240' });
+            canvas.style.width = '100%';
+            canvas.style.height = '120px';
+
+            const wrapper = el('div', { className: 'chart-wrapper' }, canvas);
+            chartsGrid.appendChild(wrapper);
+
+            this._charts[cfg.key] = new MiniChart(canvas, {
+                label: cfg.label,
+                color: cfg.color,
+                format: cfg.format,
+            });
+            // Draw initial empty state
+            this._charts[cfg.key].draw();
+        }
+
+        // -- Experiment list table --
+        const tableHead = el('thead', {},
+            el('tr', {},
+                el('th', {}, 'Name'),
+                el('th', {}, 'Policy'),
+                el('th', {}, 'Status'),
+                el('th', { style: { minWidth: '140px' } }, 'Progress'),
+                el('th', {}, 'Time'),
             ),
         );
 
+        const tableBody = el('tbody', {});
+        for (let i = 0; i < this._runExperiments.length; i++) {
+            const exp = this._runExperiments[i];
+            const expId = exp.id || exp.experiment_id || `exp-${i}`;
+            const expName = exp.name || expId;
+            const expPolicy = exp.config?.policy || exp.policy || '--';
+            const expStatus = exp.status || 'pending';
+
+            const badgeEl = el('span', {
+                className: `status-badge status-${statusClass(expStatus)}`,
+            }, expStatus);
+
+            const progressFill = el('div', { className: 'progress-fill', style: { width: '0%' } });
+            const progressBar = el('div', { className: 'progress-bar' }, progressFill);
+            const progressLabel = el('span', { className: 'progress-label' }, '0%');
+            const progressCell = el('div', { className: 'progress-labeled' }, progressBar, progressLabel);
+
+            const timeCell = el('span', { className: 'text-mono text-muted' }, '--');
+
+            const row = el('tr', { className: 'experiment-row' },
+                el('td', { className: 'run-experiment-name' }, expName),
+                el('td', {}, expPolicy),
+                el('td', {}, badgeEl),
+                el('td', {}, progressCell),
+                el('td', {}, timeCell),
+            );
+
+            tableBody.appendChild(row);
+
+            this._experimentRows.set(expId, {
+                row,
+                idx: i,
+                statusBadge: badgeEl,
+                progressFill,
+                progressLabel,
+                timeCell,
+                startTime: null,
+                lastRound: 0,
+                totalRounds: null,
+            });
+        }
+
+        const table = el('table', { className: 'experiment-table' }, tableHead, tableBody);
+        const tableContainer = el('div', { className: 'table-container' }, table);
+
+        // -- Section labels --
+        const chartsSection = el('div', { className: 'experiment-section' },
+            el('div', { className: 'experiment-section-title' }, 'Live Metrics'),
+            chartsGrid,
+        );
+
+        const listSection = el('div', { className: 'experiment-section' },
+            el('div', { className: 'experiment-section-title' }, 'Experiments'),
+            tableContainer,
+        );
+
+        // -- Assemble monitor --
+        const monitor = el('div', { className: 'run-monitor' },
+            el('div', { className: 'run-header' },
+                el('div', { className: 'flex items-center gap-sm' },
+                    el('h2', {}, group.name),
+                    statusBadge,
+                ),
+                controls,
+            ),
+            summary,
+            chartsSection,
+            listSection,
+        );
+
         main.appendChild(monitor);
+
+        // If group is already running, reconnect WebSocket
+        if (isRunning) {
+            this._connectWebSocket(groupId);
+        }
+
+        // Update stats for experiments that already have a status
+        this._recalcStatsFromExperiments();
     }
 
     _buildRunStat(value, label, valueClass = '') {
         return el('div', { className: 'run-stat' },
-            el('div', { className: `run-stat-value ${valueClass}` }, value),
+            el('div', { className: `run-stat-value ${valueClass}` }, String(value)),
             el('div', { className: 'run-stat-label' }, label),
         );
     }
 
+    // ----------------------------------------------------------
+    // Run Tab -- Run / Cancel / Export
+    // ----------------------------------------------------------
+
     async _runGroup(groupId) {
         try {
             await api.runGroup(groupId);
-            await this._refreshDesignSidebar();
-            this._refreshRunSidebar();
         } catch (err) {
             console.error('Failed to run group:', err);
+            this._showToast('Failed to start experiments: ' + err.message, 'error');
+            return;
         }
+
+        // Update button states
+        this._updateRunControls(true);
+
+        // Connect WebSocket for live events
+        this._connectWebSocket(groupId);
+
+        // Refresh sidebars to show "running" status
+        await this._refreshDesignSidebar();
+        this._refreshRunSidebar();
+    }
+
+    _connectWebSocket(groupId) {
+        if (this._activeWs) {
+            this._activeWs.close();
+            this._activeWs = null;
+        }
+
+        try {
+            const ws = api.streamEvents(groupId);
+            this._activeWs = ws;
+
+            ws.onmessage = (evt) => {
+                try {
+                    const event = JSON.parse(evt.data);
+                    this._handleRunEvent(event);
+                } catch (parseErr) {
+                    console.warn('Failed to parse WebSocket event:', parseErr);
+                }
+            };
+
+            ws.onerror = (err) => {
+                console.error('WebSocket error:', err);
+            };
+
+            ws.onclose = () => {
+                this._activeWs = null;
+                this._refreshRunView();
+            };
+        } catch (err) {
+            console.error('Failed to connect WebSocket:', err);
+        }
+    }
+
+    _cancelGroup() {
+        if (this._activeWs) {
+            try {
+                this._activeWs.send(JSON.stringify({ type: 'cancel' }));
+            } catch (err) {
+                console.warn('Failed to send cancel via WebSocket:', err);
+            }
+        }
+
+        // Also call REST endpoint as a fallback
+        if (this.selectedRunGroupId) {
+            api.cancelGroup(this.selectedRunGroupId).catch(err => {
+                console.error('Failed to cancel group:', err);
+            });
+        }
+
+        this._updateRunControls(false);
+        this._showToast('Cancellation requested', 'warning');
+    }
+
+    async _exportGroup(groupId) {
+        try {
+            const result = await api.exportGroup(groupId);
+            this._showToast('Exported successfully. Switching to Analyze tab.', 'success');
+            // Switch to Analyze tab after a short delay
+            setTimeout(() => this.switchTab('analyze'), 500);
+        } catch (err) {
+            console.error('Export failed:', err);
+            this._showToast('Export failed: ' + err.message, 'error');
+        }
+    }
+
+    // ----------------------------------------------------------
+    // Run Tab -- WebSocket Event Handler
+    // ----------------------------------------------------------
+
+    _handleRunEvent(event) {
+        switch (event.type) {
+            case 'round': {
+                const metrics = event.data?.metrics || {};
+                const expId = event.experiment_id;
+
+                // Push to charts
+                if (metrics.utilization !== undefined) {
+                    this._charts.utilization?.push(metrics.utilization * 100);
+                }
+                if (metrics.queued !== undefined) {
+                    this._charts.queueDepth?.push(metrics.queued);
+                }
+                if (event.data?.summary?.avg_jct !== undefined) {
+                    this._charts.avgJct?.push(event.data.summary.avg_jct);
+                }
+                if (metrics.completed !== undefined) {
+                    this._charts.throughput?.push(metrics.completed);
+                }
+
+                // Update experiment row
+                if (expId) {
+                    this._updateExperimentStatus(expId, 'running', event.data?.round_num, event.data?.elapsed_time);
+                }
+                break;
+            }
+
+            case 'complete': {
+                const expId = event.experiment_id;
+                if (expId) {
+                    this._updateExperimentStatus(expId, 'completed');
+                    this._completedCount++;
+                    this._updateSummaryStats();
+                }
+                break;
+            }
+
+            case 'error': {
+                const expId = event.experiment_id;
+                if (expId) {
+                    const msg = event.data?.message || 'Unknown error';
+                    this._updateExperimentStatus(expId, 'failed', null, null, msg);
+                    this._failedCount++;
+                    this._updateSummaryStats();
+                }
+                break;
+            }
+
+            case 'group_complete': {
+                this._updateRunControls(false);
+                this._updateSummaryStats();
+                this._showToast('All experiments finished.', 'success');
+                // Refresh sidebar badges
+                this._refreshDesignSidebar().then(() => this._refreshRunSidebar());
+                break;
+            }
+        }
+    }
+
+    // ----------------------------------------------------------
+    // Run Tab -- UI Update Helpers
+    // ----------------------------------------------------------
+
+    _updateExperimentStatus(expId, status, roundNum, elapsedTime, errorMsg) {
+        const entry = this._experimentRows.get(expId);
+        if (!entry) return;
+
+        // Update status badge
+        entry.statusBadge.className = `status-badge status-${statusClass(status)}`;
+        clearChildren(entry.statusBadge);
+        entry.statusBadge.appendChild(document.createTextNode(status));
+
+        // Track running count
+        if (status === 'running' && !entry.startTime) {
+            entry.startTime = Date.now();
+            this._runningCount++;
+        }
+        if (status === 'completed' || status === 'failed') {
+            if (entry.startTime) {
+                this._runningCount = Math.max(0, this._runningCount - 1);
+            }
+        }
+
+        // Update progress
+        if (roundNum !== undefined && roundNum !== null) {
+            entry.lastRound = roundNum;
+            // Estimate progress: if we have total_rounds, use it; else use round_num heuristically
+            const totalRounds = entry.totalRounds || 1000; // default assumption
+            const pct = Math.min(100, Math.round((roundNum / totalRounds) * 100));
+            entry.progressFill.style.width = pct + '%';
+            clearChildren(entry.progressLabel);
+            entry.progressLabel.appendChild(document.createTextNode(pct + '%'));
+        }
+
+        if (status === 'completed') {
+            entry.progressFill.style.width = '100%';
+            entry.progressFill.classList.add('progress-success');
+            clearChildren(entry.progressLabel);
+            entry.progressLabel.appendChild(document.createTextNode('100%'));
+        } else if (status === 'failed') {
+            entry.progressFill.classList.add('progress-danger');
+        }
+
+        // Update wall time
+        if (elapsedTime !== undefined && elapsedTime !== null) {
+            clearChildren(entry.timeCell);
+            entry.timeCell.appendChild(document.createTextNode(this._formatWallTime(elapsedTime)));
+        } else if (entry.startTime && (status === 'completed' || status === 'failed')) {
+            const elapsed = (Date.now() - entry.startTime) / 1000;
+            clearChildren(entry.timeCell);
+            entry.timeCell.appendChild(document.createTextNode(this._formatWallTime(elapsed)));
+        }
+
+        // Update summary stats
+        this._updateSummaryStats();
+    }
+
+    _updateSummaryStats() {
+        const total = this._runExperiments.length;
+        const completed = this._completedCount;
+        const failed = this._failedCount;
+        const running = this._runningCount;
+        const pending = Math.max(0, total - completed - failed - running);
+
+        if (this._runStatEls.total) {
+            clearChildren(this._runStatEls.total);
+            this._runStatEls.total.appendChild(document.createTextNode(String(total)));
+        }
+        if (this._runStatEls.pending) {
+            clearChildren(this._runStatEls.pending);
+            this._runStatEls.pending.appendChild(document.createTextNode(String(pending)));
+        }
+        if (this._runStatEls.running) {
+            clearChildren(this._runStatEls.running);
+            this._runStatEls.running.appendChild(document.createTextNode(String(running)));
+        }
+        if (this._runStatEls.complete) {
+            clearChildren(this._runStatEls.complete);
+            this._runStatEls.complete.appendChild(document.createTextNode(String(completed + failed)));
+        }
+    }
+
+    _recalcStatsFromExperiments() {
+        // Recount based on experiment statuses from the fetched data
+        this._completedCount = 0;
+        this._failedCount = 0;
+        this._runningCount = 0;
+
+        for (const exp of this._runExperiments) {
+            const s = exp.status || 'pending';
+            if (s === 'complete' || s === 'completed') this._completedCount++;
+            else if (s === 'error' || s === 'failed') this._failedCount++;
+            else if (s === 'running') this._runningCount++;
+        }
+
+        this._updateSummaryStats();
+    }
+
+    _updateRunControls(isRunning) {
+        this._isRunning = isRunning;
+
+        if (this._runBtnRun) {
+            this._runBtnRun.disabled = isRunning;
+        }
+        if (this._runBtnCancel) {
+            this._runBtnCancel.disabled = !isRunning;
+        }
+        if (this._runBtnExport) {
+            // Enable export only when not running
+            this._runBtnExport.disabled = isRunning;
+        }
+        if (this._runHeaderBadge) {
+            const status = isRunning ? 'running' : 'complete';
+            this._runHeaderBadge.className = `status-badge status-${statusClass(status)}`;
+            clearChildren(this._runHeaderBadge);
+            this._runHeaderBadge.appendChild(document.createTextNode(status));
+        }
+    }
+
+    _refreshRunView() {
+        // Called when WebSocket closes -- refresh the view
+        if (this.selectedRunGroupId) {
+            this._refreshDesignSidebar().then(() => {
+                this._refreshRunSidebar();
+            });
+        }
+    }
+
+    _cleanupRunState() {
+        if (this._activeWs) {
+            this._activeWs.close();
+            this._activeWs = null;
+        }
+        this._charts = {};
+        this._experimentRows = new Map();
+        this._runExperiments = [];
+        this._completedCount = 0;
+        this._failedCount = 0;
+        this._runningCount = 0;
+        this._isRunning = false;
+    }
+
+    // ----------------------------------------------------------
+    // Run Tab -- Utilities
+    // ----------------------------------------------------------
+
+    _formatWallTime(seconds) {
+        if (seconds === null || seconds === undefined) return '--';
+        const s = Math.round(seconds);
+        if (s < 60) return s + 's';
+        if (s < 3600) return Math.floor(s / 60) + 'm ' + (s % 60) + 's';
+        const h = Math.floor(s / 3600);
+        const m = Math.floor((s % 3600) / 60);
+        return h + 'h ' + m + 'm';
+    }
+
+    _showToast(message, type = 'info') {
+        // Find or create toast container
+        let container = document.querySelector('.toast-container');
+        if (!container) {
+            container = el('div', { className: 'toast-container' });
+            document.body.appendChild(container);
+        }
+
+        const toast = el('div', { className: `toast toast-${type}` }, message);
+        container.appendChild(toast);
+
+        // Auto-remove after 4 seconds
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
     }
 }
 

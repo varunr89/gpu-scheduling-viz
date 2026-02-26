@@ -34,24 +34,20 @@ class PluginRegistry:
             logger.warning("Plugins directory does not exist: %s", self.plugins_dir)
             return
 
-        # Temporarily add the plugins directory to sys.path so that
-        # ``importlib.import_module`` can find the packages.
+        # Add the plugins directory to sys.path permanently so that
+        # worker processes (spawned via ProcessPoolExecutor) can
+        # deserialise simulator instances by re-importing the module.
         plugins_str = str(self.plugins_dir)
-        path_added = plugins_str not in sys.path
-        if path_added:
+        if plugins_str not in sys.path:
             sys.path.insert(0, plugins_str)
 
-        try:
-            for entry in sorted(self.plugins_dir.iterdir()):
-                if not entry.is_dir():
-                    continue
-                init_file = entry / "__init__.py"
-                if not init_file.exists():
-                    continue
-                self._try_load_package(entry.name)
-        finally:
-            if path_added and plugins_str in sys.path:
-                sys.path.remove(plugins_str)
+        for entry in sorted(self.plugins_dir.iterdir()):
+            if not entry.is_dir():
+                continue
+            init_file = entry / "__init__.py"
+            if not init_file.exists():
+                continue
+            self._try_load_package(entry.name)
 
     def _try_load_package(self, package_name: str) -> None:
         """Import *package_name* and register any valid Simulator subclasses."""

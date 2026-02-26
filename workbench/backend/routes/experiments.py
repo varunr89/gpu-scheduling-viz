@@ -139,14 +139,20 @@ async def run_group(group_id: str, request: Request) -> dict:
     for exp in experiments:
         if exp["status"] != "pending":
             continue
+        # Atomically mark "queued" before spawning -- prevents duplicate runs
+        # if two near-simultaneous POST requests both see "pending".
+        await db.update_experiment(exp["id"], status="queued")
+        queued.append(exp)
+
+    # Spawn tasks only after all statuses are updated.
+    for exp in queued:
         asyncio.create_task(
             _run_experiment_task(
                 request.app, exp["id"], simulator, exp["config"]
             )
         )
-        queued.append(exp["id"])
 
-    return {"status": "running", "group_id": group_id, "queued": queued}
+    return {"status": "running", "group_id": group_id, "queued": [e["id"] for e in queued]}
 
 
 # ---------------------------------------------------------------------------
@@ -237,9 +243,8 @@ async def stream_events(websocket: WebSocket, group_id: str) -> None:
         await websocket.close()
         return
 
-    # Mark experiments as running.
-    for exp in pending:
-        await db.update_experiment(exp["id"], status="running")
+    # Track which experiments actually started so we can reconcile on disconnect.
+    started_ids: set = set()
 
     # --- Cancel listener task ---
     cancel_requested = asyncio.Event()
@@ -268,6 +273,12 @@ async def stream_events(websocket: WebSocket, group_id: str) -> None:
         async for event in runner.run_group(group_id, pending, simulator):
             if cancel_requested.is_set():
                 break
+
+            # Mark experiment "running" lazily on first event for it.
+            exp_id = event.get("experiment_id")
+            if exp_id and exp_id not in started_ids:
+                started_ids.add(exp_id)
+                await db.update_experiment(exp_id, status="running")
 
             # Backpressure: sample round events.
             if event["type"] == "round":
@@ -298,3 +309,14 @@ async def stream_events(websocket: WebSocket, group_id: str) -> None:
             await cancel_task
         except (asyncio.CancelledError, Exception):
             pass
+
+        # Reconcile: mark experiments that never started (or were still running)
+        # as "interrupted" so they don't get stuck in "running"/"queued" state.
+        for exp in pending:
+            if exp["id"] not in started_ids:
+                await db.update_experiment(exp["id"], status="interrupted")
+            elif exp["id"] in started_ids:
+                # Check if it finished -- if still "running", mark interrupted.
+                current = await db.get_experiment(exp["id"])
+                if current and current["status"] == "running":
+                    await db.update_experiment(exp["id"], status="interrupted")

@@ -454,6 +454,12 @@ class GavelSimulator(Simulator):
         # ----------------------------------------------------------
         # 7. Emit round events from recorded metrics
         # ----------------------------------------------------------
+        # KNOWN LIMITATION: cancel_event is only checked here, *after*
+        # simulate() has already returned.  Gavel's simulate() does not
+        # accept a cancel callback, so long-running simulations cannot
+        # be interrupted mid-execution.  To fix this, Gavel's
+        # Scheduler.simulate() would need a cancel_fn parameter that it
+        # checks between scheduling rounds.
         round_metrics = getattr(sched, "_round_metrics_history", [])
         for i, metrics in enumerate(round_metrics):
             if cancel_event.is_set():

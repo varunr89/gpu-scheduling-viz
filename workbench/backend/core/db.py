@@ -182,9 +182,15 @@ class Database:
             results.append(d)
         return results
 
+    # Whitelist of column names accepted by update_experiment to prevent
+    # SQL injection via dynamic column interpolation.
+    _UPDATABLE_COLUMNS = frozenset({
+        "status", "progress_pct", "wall_time_s", "completed_at",
+    })
+
     async def update_experiment(self, experiment_id: str, **kwargs) -> dict:
         """Update experiment fields. Supported kwargs: status, progress_pct,
-        summary, wall_time_s, completed_at."""
+        summary, config, wall_time_s, completed_at."""
         sets = []
         params = []
         for key, value in kwargs.items():
@@ -194,9 +200,11 @@ class Database:
             elif key == "config":
                 sets.append("config_json = ?")
                 params.append(json.dumps(value))
-            else:
+            elif key in self._UPDATABLE_COLUMNS:
                 sets.append(f"{key} = ?")
                 params.append(value)
+            else:
+                raise ValueError(f"Cannot update unknown column: {key!r}")
         if not sets:
             return await self.get_experiment(experiment_id)
         params.append(experiment_id)

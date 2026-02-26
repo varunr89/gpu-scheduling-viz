@@ -1277,6 +1277,139 @@ tbody tr:hover {
 .sr-only       { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
 
 /* ================================================================
+   Schema Form (Design tab -- experiment designer)
+   ================================================================ */
+.schema-form {
+    margin-top: 0.5rem;
+}
+
+/* Help text below labels */
+.form-hint {
+    font-size: 0.75rem;
+    color: var(--wb-text-muted);
+    line-height: 1.4;
+    margin-bottom: 0.4rem;
+}
+
+/* Policy description sub-hint */
+.policy-description {
+    font-style: italic;
+    color: var(--wb-text-secondary);
+}
+
+/* Numeric field container (holds sweep toggle + input) */
+.numeric-field-container {
+    position: relative;
+}
+
+/* Sweep toggle (inline checkbox) */
+.sweep-toggle {
+    font-size: 0.7rem;
+    margin-bottom: 0.35rem;
+    color: var(--wb-text-muted);
+    user-select: none;
+}
+
+.sweep-toggle input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+}
+
+.sweep-toggle-text {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+}
+
+/* Sweep inputs row */
+.sweep-inputs {
+    background: var(--wb-bg-card);
+    border: 1px solid var(--wb-border);
+    border-radius: var(--wb-radius-md);
+    padding: 0.65rem;
+    margin-top: 0.25rem;
+}
+
+.sweep-inputs .form-row {
+    gap: 0.65rem;
+}
+
+.sweep-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.sweep-field .form-label {
+    font-size: 0.65rem;
+    margin-bottom: 0;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.sweep-field .form-input-compact {
+    width: 100%;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.8rem;
+}
+
+.sweep-count {
+    margin-top: 0.4rem;
+    display: inline-flex;
+}
+
+/* Cluster spec nested display */
+.cluster-spec-field .gpu-type-grid {
+    margin-top: 0.35rem;
+}
+
+/* Experiment preview section */
+.preview-section {
+    border-top: 2px solid var(--wb-accent-subtle);
+    padding-top: 1rem;
+}
+
+.preview-stat-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    text-align: center;
+}
+
+.preview-stat {
+    padding: 0.5rem;
+}
+
+.preview-stat-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--wb-accent);
+}
+
+.preview-stat-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--wb-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-top: 0.15rem;
+}
+
+.preview-sweep-details {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+/* Form action buttons (bottom of design form) */
+.form-actions {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--wb-border);
+}
+
+/* ================================================================
    Responsive -- sidebar collapse below 768px
    ================================================================ */
 @media (max-width: 768px) {

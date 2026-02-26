@@ -4,14 +4,19 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from pathlib import Path
 from typing import Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Request, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 
 from workbench.api.types import CompleteEvent, ErrorEvent, RoundEvent
+from workbench.backend.core.exporter import Exporter
 
 logger = logging.getLogger(__name__)
+
+# Project root -- the gpu-scheduling-viz directory.
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
 router = APIRouter()
 
@@ -145,16 +150,151 @@ async def run_group(group_id: str, request: Request) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# WebSocket (stub for Task 13)
+# Export
+# ---------------------------------------------------------------------------
+
+@router.post("/{group_id}/export")
+async def export_group(group_id: str, request: Request) -> dict:
+    """Export all completed experiments in a group to .viz.bin files.
+
+    Creates .viz.bin files in the project's ``data/`` directory and
+    updates ``data/manifest.json`` so the viz tool can discover them.
+    """
+    db = request.app.state.db
+
+    group = await db.get_group(group_id)
+    if group is None:
+        raise HTTPException(status_code=404, detail="Group not found")
+
+    experiments = await db.list_experiments(group_id)
+    completed = [e for e in experiments if e["status"] == "completed"]
+    if not completed:
+        raise HTTPException(
+            status_code=400,
+            detail="No completed experiments to export",
+        )
+
+    exporter = Exporter(
+        data_dir=request.app.state.runner._data_dir,
+        viz_data_dir=_PROJECT_ROOT / "data",
+        manifest_path=_PROJECT_ROOT / "data" / "manifest.json",
+    )
+
+    paths: List[str] = []
+    for exp in completed:
+        path = exporter.export_experiment(exp["id"], exp)
+        paths.append(path)
+
+    exporter.update_manifest(completed, paths)
+    return {"exported": len(paths), "files": paths}
+
+
+# ---------------------------------------------------------------------------
+# WebSocket event streaming
 # ---------------------------------------------------------------------------
 
 @router.websocket("/{group_id}/stream")
 async def stream_events(websocket: WebSocket, group_id: str) -> None:
-    """WebSocket endpoint for live event streaming (stub)."""
+    """Stream experiment events over WebSocket.
+
+    On connect, runs all *pending* experiments in the group sequentially via
+    ``runner.run_group()`` and pushes each event to the client as JSON.
+
+    Features:
+    - **Backpressure**: Round events are sampled (every Nth round sent)
+      so a slow client does not cause memory buildup.
+    - **Cancellation**: The client can send ``{"type": "cancel"}`` to
+      cancel all remaining experiments.
+    - **DB updates**: Terminal events (complete, error) update experiment
+      status in the database.
+    """
     await websocket.accept()
+
+    db = websocket.app.state.db
+    registry = websocket.app.state.registry
+    runner = websocket.app.state.runner
+
+    # --- Validate group exists ---
+    group = await db.get_group(group_id)
+    if not group:
+        await websocket.close(code=4004, reason="Group not found")
+        return
+
+    # --- Resolve simulator ---
+    simulator = registry.get_simulator(group["simulator"])
+    if not simulator:
+        await websocket.close(code=4000, reason="Simulator not found")
+        return
+
+    # --- Filter to pending/queued experiments ---
+    experiments = await db.list_experiments(group_id)
+    pending = [e for e in experiments if e["status"] in ("pending", "queued")]
+
+    if not pending:
+        await websocket.send_json(
+            {"type": "group_complete", "message": "No pending experiments"}
+        )
+        await websocket.close()
+        return
+
+    # Mark experiments as running.
+    for exp in pending:
+        await db.update_experiment(exp["id"], status="running")
+
+    # --- Cancel listener task ---
+    cancel_requested = asyncio.Event()
+
+    async def _listen_for_cancel() -> None:
+        try:
+            while True:
+                data = await websocket.receive_json()
+                if isinstance(data, dict) and data.get("type") == "cancel":
+                    cancel_requested.set()
+                    for exp in pending:
+                        runner.cancel_experiment(exp["id"])
+        except WebSocketDisconnect:
+            cancel_requested.set()
+        except Exception:
+            pass
+
+    cancel_task = asyncio.create_task(_listen_for_cancel())
+
+    # --- Stream events with backpressure sampling ---
+    # Send every Nth round event to avoid overwhelming slow clients.
+    SAMPLE_INTERVAL = 10
+    round_count = 0
+
     try:
-        while True:
-            # Wait for client messages; close on disconnect.
-            await websocket.receive_text()
-    except WebSocketDisconnect:
-        pass
+        async for event in runner.run_group(group_id, pending, simulator):
+            if cancel_requested.is_set():
+                break
+
+            # Backpressure: sample round events.
+            if event["type"] == "round":
+                round_count += 1
+                if round_count % SAMPLE_INTERVAL != 0:
+                    continue
+
+            # Update database on terminal events.
+            if event["type"] == "complete":
+                exp_data = event.get("data", {})
+                await db.update_experiment(
+                    event["experiment_id"],
+                    status="completed",
+                    summary=exp_data.get("summary"),
+                )
+            elif event["type"] == "error":
+                await db.update_experiment(
+                    event["experiment_id"], status="failed"
+                )
+
+            try:
+                await websocket.send_json(event)
+            except Exception:
+                break
+    finally:
+        cancel_task.cancel()
+        try:
+            await cancel_task
+        except (asyncio.CancelledError, Exception):
+            pass

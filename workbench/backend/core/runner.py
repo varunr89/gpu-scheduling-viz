@@ -208,6 +208,49 @@ class ExperimentRunner:
             # Clean up cancel event tracking.
             self._cancel_events.pop(experiment_id, None)
 
+    async def run_group(
+        self,
+        group_id: str,
+        experiments: list,
+        simulator: Simulator,
+    ) -> AsyncIterator[dict]:
+        """Run multiple experiments sequentially and yield tagged events.
+
+        Each experiment in *experiments* should be a dict with ``"id"`` and
+        ``"config"`` keys.  Events are wrapped in a dict with ``type``,
+        ``experiment_idx``, ``experiment_id``, and ``data`` fields so the
+        caller can demux by experiment.
+
+        After all experiments finish (or error), a final
+        ``{"type": "group_complete"}`` event is yielded.
+        """
+        for idx, exp in enumerate(experiments):
+            async for event in self.run_experiment(
+                exp["id"], simulator, exp["config"]
+            ):
+                if isinstance(event, RoundEvent):
+                    yield {
+                        "type": "round",
+                        "experiment_idx": idx,
+                        "experiment_id": exp["id"],
+                        "data": event.to_dict(),
+                    }
+                elif isinstance(event, CompleteEvent):
+                    yield {
+                        "type": "complete",
+                        "experiment_idx": idx,
+                        "experiment_id": exp["id"],
+                        "data": event.to_dict(),
+                    }
+                elif isinstance(event, ErrorEvent):
+                    yield {
+                        "type": "error",
+                        "experiment_idx": idx,
+                        "experiment_id": exp["id"],
+                        "data": event.to_dict(),
+                    }
+        yield {"type": "group_complete"}
+
     def cancel_experiment(self, experiment_id: str) -> bool:
         """Signal a running experiment to cancel.
 

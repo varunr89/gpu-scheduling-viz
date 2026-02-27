@@ -7,6 +7,7 @@ from viz.tools.log_parser import (
     parse_job_completion, parse_telemetry
 )
 from viz.tools.binary_format import write_viz_file
+from viz.tools.experiment_schema import validate_filters
 
 # Job type mapping for categories
 JOB_TYPE_CATEGORIES = {
@@ -226,7 +227,8 @@ def preprocess_simulation(
     measurement_window: Tuple[int, int] = (4000, 5000),
     policy: str = "unknown",
     gpus_per_node: int = 1,
-    max_rounds: int = 0
+    max_rounds: int = 0,
+    metadata: dict = None,
 ) -> None:
     """Process a simulation log file and generate a .viz.bin file.
 
@@ -238,7 +240,11 @@ def preprocess_simulation(
         policy: Name of the scheduling policy
         gpus_per_node: Number of GPUs per physical node (for fragmentation metrics)
         max_rounds: If > 0, downsample to at most this many rounds (0 = no limit)
+        metadata: Optional experiment metadata dict; validated against experiment_schema if provided
     """
+    if metadata is not None:
+        validate_filters(metadata)
+
     gpu_types = parse_cluster_spec(cluster_spec)
     for gt in gpu_types:
         gt['gpus_per_node'] = gpus_per_node
@@ -497,6 +503,13 @@ if __name__ == '__main__':
         '--max-rounds', type=int, default=0,
         help='Max rounds to keep (0 = no limit). Downsamples evenly if exceeded.'
     )
+    parser.add_argument('--figure', help='Figure reference (e.g. gavel-fig9, fgd-fig7)')
+    parser.add_argument('--scheduler', help='Scheduler (mmf, fifo, gavel, packed)')
+    parser.add_argument('--placement', help='Placement (strided, random, bestfit, fgd)')
+    parser.add_argument('--trace', help='Trace (philly, alibaba)')
+    parser.add_argument('--date', help='Experiment date (YYYY-MM-DD)')
+    parser.add_argument('--seed', help='Seed (s0, s1, s2)')
+    parser.add_argument('--load', help='Load (e.g. 60jph, 0.8jph)')
     args = parser.parse_args()
 
     # Auto-detect policy from log first line if not specified
@@ -508,6 +521,14 @@ if __name__ == '__main__':
             if m:
                 policy = m.group(1)
 
+    metadata = None
+    if args.figure:
+        metadata = {
+            'date': args.date, 'trace': args.trace, 'figure': args.figure,
+            'scheduler': args.scheduler, 'placement': args.placement,
+            'load': args.load, 'seed': args.seed,
+        }
+
     print(f"Processing {args.log_path} (policy={policy})...")
     preprocess_simulation(
         args.log_path,
@@ -517,5 +538,6 @@ if __name__ == '__main__':
         policy=policy,
         gpus_per_node=args.gpus_per_node,
         max_rounds=args.max_rounds,
+        metadata=metadata,
     )
     print(f"Written to {args.output_path}")

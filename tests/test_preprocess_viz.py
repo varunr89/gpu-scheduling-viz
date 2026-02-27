@@ -13,6 +13,26 @@ scheduler:INFO [0] [Micro-task scheduled]\tJob ID: 1\tWorker type: v100\tWorker 
 scheduler:INFO [0] TELEMETRY {"round": 1, "sim_time": 360, "wall_time": 0.01, "jobs_generated": 2, "jobs_active": 2, "jobs_running": 2, "jobs_completed_total": 0, "jobs_completed_window": 0, "jobs_queued": 0, "utilization": 0.25, "avg_jct": 0, "next_arrival": 1000, "v100_used": 3, "v100_total": 4, "p100_used": 0, "p100_total": 4, "k80_used": 0, "k80_total": 4, "windowed_completion_rate": null}
 '''
 
+def test_preprocess_rejects_bad_metadata():
+    """preprocess_simulation should reject invalid metadata when provided."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        log_path = os.path.join(tmpdir, 'simulation.log')
+        output_path = os.path.join(tmpdir, 'output.viz.bin')
+        with open(log_path, 'w') as f:
+            f.write(SAMPLE_LOG)
+        with pytest.raises(ValueError, match='figure'):
+            preprocess_simulation(
+                log_path=log_path, output_path=output_path,
+                cluster_spec="4:4:4", measurement_window=(0, 100),
+                metadata={
+                    'date': '2026-02-07', 'trace': 'philly',
+                    'figure': 'bad-figure',
+                    'scheduler': 'mmf', 'placement': 'strided',
+                    'load': '1.0jph', 'seed': 's0',
+                },
+            )
+
+
 def test_preprocess_simulation_creates_viz_file():
     with tempfile.TemporaryDirectory() as tmpdir:
         log_path = os.path.join(tmpdir, 'simulation.log')

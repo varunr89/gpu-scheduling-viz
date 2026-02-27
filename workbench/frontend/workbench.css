@@ -1002,7 +1002,7 @@ tbody tr:hover {
    Run Monitor (Run tab -- right panel)
    ================================================================ */
 .run-monitor {
-    max-width: 900px;
+    max-width: 1100px;
 }
 
 .run-header {
@@ -1094,7 +1094,7 @@ tbody tr:hover {
     flex-shrink: 0;
 }
 
-/* Charts grid (2x2 for live mini charts) */
+/* Charts grid (2x3 for live metrics) */
 .charts-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -1103,13 +1103,86 @@ tbody tr:hover {
 }
 
 .charts-grid .chart-wrapper {
-    min-height: 120px;
+    min-height: 180px;
 }
 
 .charts-grid .chart-wrapper canvas {
     display: block;
     width: 100%;
-    height: 120px;
+    height: 180px;
+}
+
+/* Heatmap section (Run tab) */
+.heatmap-section {
+    margin-top: 1rem;
+}
+
+.heatmap-container {
+    background: var(--wb-bg-base);
+    border: 1px solid var(--wb-border);
+    border-radius: var(--wb-radius-md);
+    padding: 0.75rem;
+    min-height: 200px;
+}
+
+.heatmap-container canvas {
+    display: block;
+    width: 100%;
+}
+
+/* Per-type utilization bars below heatmap */
+.heatmap-type-bars {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.heatmap-type-bar {
+    background: var(--wb-bg-card);
+    border: 1px solid var(--wb-border);
+    border-radius: var(--wb-radius-sm);
+    padding: 0.4rem 0.6rem;
+}
+
+.heatmap-type-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--wb-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.25rem;
+}
+
+.heatmap-type-fill {
+    height: 6px;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.heatmap-type-pct {
+    font-size: 0.7rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--wb-text-muted);
+    margin-top: 0.15rem;
+}
+
+/* Heatmap stats row */
+.heatmap-stats {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--wb-text-secondary);
+}
+
+.heatmap-stats span {
+    font-variant-numeric: tabular-nums;
+}
+
+.heatmap-stats strong {
+    color: var(--wb-text-primary);
+    font-weight: 600;
 }
 
 /* Experiment table (Run tab) */

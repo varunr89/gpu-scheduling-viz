@@ -58,6 +58,63 @@ export class TimeSeriesChart {
         }
     }
 
+    // ---------------------------------------------------------------
+    // Streaming API -- for live data ingestion (backward-compatible)
+    // ---------------------------------------------------------------
+
+    /**
+     * Append a new series definition with empty values.
+     * @param {object} def - Series definition {label, color, yAxis?, fill?, stacked?, dash?}
+     * @returns {number} Index of the newly added series
+     */
+    addSeries(def) {
+        const s = { values: [], ...def };
+        this.series.push(s);
+        return this.series.length - 1;
+    }
+
+    /**
+     * Push a single data point to an existing series.
+     * @param {number} seriesIdx - Index returned by addSeries()
+     * @param {number} value - The data value
+     */
+    pushPoint(seriesIdx, value) {
+        const s = this.series[seriesIdx];
+        if (!s) return;
+        s.values.push(value);
+        if (s.values.length > this.maxRound) {
+            this.maxRound = s.values.length;
+        }
+    }
+
+    /**
+     * Append a sim-time value for the current round.
+     * @param {number} seconds - Simulated time in seconds
+     */
+    pushSimTime(seconds) {
+        if (!this.simTimes) this.simTimes = [];
+        this.simTimes.push(seconds);
+    }
+
+    /** Render at the latest round (convenience for live use). */
+    renderLive() {
+        this.render(this.maxRound - 1);
+    }
+
+    /** Clear all series and state for reuse. */
+    reset() {
+        this.series = [];
+        this.maxRound = 0;
+        this.currentRound = 0;
+        this.simTimes = null;
+        this._lastLayout = null;
+        this._snapshot = null;
+        this._hoverX = null;
+        this._stackBase = null;
+        const ctx = this.ctx;
+        ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+
     /**
      * Set simulated time array for x-axis labels.
      * @param {number[]} times - simTime in seconds, one per round

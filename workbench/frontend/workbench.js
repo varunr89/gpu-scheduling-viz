@@ -6,6 +6,12 @@
  */
 
 // ================================================================
+// Imports (ES module -- viz chart classes for live metrics)
+// ================================================================
+import { TimeSeriesChart } from '/src/timeseries.js';
+import { CDFChart } from '/src/pdf-chart.js';
+
+// ================================================================
 // API Client
 // ================================================================
 const API_BASE = '/api';
@@ -160,111 +166,403 @@ function statusClass(status) {
 }
 
 // ================================================================
-// MiniChart -- Canvas line chart for live monitoring
+// LiveHeatmap -- Small inline GPU allocation heatmap
 // ================================================================
 
-class MiniChart {
-    constructor(canvas, options = {}) {
+class LiveHeatmap {
+    /**
+     * @param {HTMLCanvasElement} canvas
+     * @param {object} gpuTypes - {typeName: count, ...}
+     */
+    constructor(canvas, gpuTypes) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
-        this.data = [];
-        this.maxPoints = options.maxPoints || 200;
-        this.label = options.label || '';
-        this.color = options.color || '#6366f1';
-        this.format = options.format || (v => v.toFixed(1));
+        this.gpuTypes = gpuTypes;
+        this.totalGpus = Object.values(gpuTypes).reduce((a, b) => a + b, 0);
+        // Build ordered type list with offsets
+        this.typeList = [];
+        let offset = 0;
+        for (const [name, count] of Object.entries(gpuTypes)) {
+            this.typeList.push({ name, count, offset });
+            offset += count;
+        }
+        // Color palette per type
+        this._typeColors = [
+            '#4ecca3', '#4a90d9', '#ffb347', '#d94a4a',
+            '#9b59b6', '#e67e22', '#1abc9c', '#e74c3c',
+        ];
+        // Per-type utilization bars (set by parent)
+        this.typeBarsEl = null;
+        this.statsEl = null;
     }
 
-    push(value) {
-        this.data.push(value);
-        if (this.data.length > this.maxPoints) this.data.shift();
-        this.draw();
-    }
-
-    reset() {
-        this.data = [];
-        this.draw();
-    }
-
-    draw() {
-        const { ctx, canvas, data } = this;
-        const w = canvas.width;
-        const h = canvas.height;
-        const padding = { top: 24, right: 10, bottom: 20, left: 40 };
-
+    /**
+     * Update heatmap from allocations dict and stats.
+     * @param {object} allocations - {jobId: [gpuIdx, ...]}
+     * @param {object} stats - {running, queued, completed}
+     */
+    update(allocations, stats) {
+        const ctx = this.ctx;
+        const w = this.canvas.width;
+        const h = this.canvas.height;
         ctx.clearRect(0, 0, w, h);
 
-        // Background
-        ctx.fillStyle = '#1a1a2e';
-        ctx.fillRect(0, 0, w, h);
+        // Compute cell layout
+        const cols = Math.ceil(Math.sqrt(this.totalGpus * (w / h)));
+        const rows = Math.ceil(this.totalGpus / cols);
+        const cellW = w / cols;
+        const cellH = h / rows;
 
-        // Label
-        ctx.fillStyle = '#e0e0e0';
-        ctx.font = '11px monospace';
-        ctx.textAlign = 'left';
-        ctx.fillText(this.label, padding.left, 14);
-
-        if (data.length < 2) {
-            // Show "--" when no data
-            ctx.fillStyle = '#666680';
-            ctx.font = '14px monospace';
-            ctx.textAlign = 'center';
-            ctx.fillText('--', w / 2, h / 2 + 5);
-            ctx.textAlign = 'left';
-            return;
+        // Build flat GPU -> typeIdx + allocated lookup
+        const gpuType = new Uint8Array(this.totalGpus);
+        const gpuAlloc = new Uint8Array(this.totalGpus); // 0=free, 1=used
+        for (const t of this.typeList) {
+            for (let i = 0; i < t.count; i++) {
+                gpuType[t.offset + i] = this.typeList.indexOf(t);
+            }
+        }
+        for (const [, gpuIndices] of Object.entries(allocations)) {
+            for (const idx of gpuIndices) {
+                if (idx < this.totalGpus) gpuAlloc[idx] = 1;
+            }
         }
 
-        const min = Math.min(...data);
-        const max = Math.max(...data);
-        const range = max - min || 1;
+        // Draw cells
+        for (let i = 0; i < this.totalGpus; i++) {
+            const col = i % cols;
+            const row = Math.floor(i / cols);
+            const x = col * cellW;
+            const y = row * cellH;
+            const typeIdx = gpuType[i];
+            const baseColor = this._typeColors[typeIdx % this._typeColors.length];
 
-        const plotW = w - padding.left - padding.right;
-        const plotH = h - padding.top - padding.bottom;
-
-        // Grid lines
-        ctx.strokeStyle = '#333';
-        ctx.lineWidth = 0.5;
-        for (let i = 0; i <= 4; i++) {
-            const y = padding.top + (plotH * i / 4);
-            ctx.beginPath();
-            ctx.moveTo(padding.left, y);
-            ctx.lineTo(w - padding.right, y);
-            ctx.stroke();
+            if (gpuAlloc[i]) {
+                ctx.fillStyle = baseColor;
+            } else {
+                ctx.fillStyle = 'rgba(255,255,255,0.04)';
+            }
+            ctx.fillRect(x + 0.5, y + 0.5, cellW - 1, cellH - 1);
         }
 
-        // Current value
-        const lastVal = data[data.length - 1];
-        ctx.fillStyle = this.color;
-        ctx.font = '11px monospace';
-        ctx.textAlign = 'right';
-        ctx.fillText(this.format(lastVal), w - padding.right, 14);
-        ctx.textAlign = 'left';
-
-        // Y-axis labels
-        ctx.fillStyle = '#888';
-        ctx.font = '9px monospace';
-        ctx.fillText(this.format(max), 2, padding.top + 4);
-        ctx.fillText(this.format(min), 2, h - padding.bottom);
-
-        // Data line
-        ctx.beginPath();
-        ctx.strokeStyle = this.color;
-        ctx.lineWidth = 1.5;
-        for (let i = 0; i < data.length; i++) {
-            const x = padding.left + (plotW * i / (data.length - 1));
-            const y = padding.top + plotH - (plotH * (data[i] - min) / range);
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
+        // Update per-type utilization bars
+        if (this.typeBarsEl) {
+            for (let ti = 0; ti < this.typeList.length; ti++) {
+                const t = this.typeList[ti];
+                let used = 0;
+                for (let i = 0; i < t.count; i++) {
+                    if (gpuAlloc[t.offset + i]) used++;
+                }
+                const pct = t.count > 0 ? (used / t.count * 100) : 0;
+                const barEl = this.typeBarsEl.children[ti];
+                if (barEl) {
+                    const fill = barEl.querySelector('.heatmap-type-fill');
+                    const label = barEl.querySelector('.heatmap-type-pct');
+                    if (fill) {
+                        fill.style.width = pct.toFixed(0) + '%';
+                        fill.style.background = this._typeColors[ti % this._typeColors.length];
+                    }
+                    if (label) {
+                        clearChildren(label);
+                        label.appendChild(document.createTextNode(
+                            `${used}/${t.count} (${pct.toFixed(0)}%)`
+                        ));
+                    }
+                }
+            }
         }
-        ctx.stroke();
 
-        // Fill under line
-        const lastX = padding.left + plotW;
-        const lastY = padding.top + plotH;
-        ctx.lineTo(lastX, lastY);
-        ctx.lineTo(padding.left, lastY);
-        ctx.closePath();
-        ctx.fillStyle = this.color + '20';
-        ctx.fill();
+        // Update stats
+        if (this.statsEl && stats) {
+            clearChildren(this.statsEl);
+            this.statsEl.appendChild(el('span', {}, 'Running: ', el('strong', {}, String(stats.running || 0))));
+            this.statsEl.appendChild(el('span', {}, 'Queued: ', el('strong', {}, String(stats.queued || 0))));
+            this.statsEl.appendChild(el('span', {}, 'Completed: ', el('strong', {}, String(stats.completed || 0))));
+        }
+    }
+}
+
+// ================================================================
+// LiveMetricsPanel -- Manages 6 charts + CDF + heatmap
+// ================================================================
+
+class LiveMetricsPanel {
+    /**
+     * @param {HTMLElement} container - Parent DOM element
+     * @param {object} gpuTypes - {typeName: count} from cluster spec
+     */
+    constructor(container, gpuTypes) {
+        this._container = container;
+        this._gpuTypes = gpuTypes;
+
+        // Accumulated data for derived charts
+        this._jctWindow = [];      // Sliding window of last 100 JCTs
+        this._allDurations = [];   // All JCT durations for CDF
+        this._pendingBySf = {};    // {sf: seriesIdx} for stacked demand chart
+        this._roundCount = 0;
+
+        this._build();
+    }
+
+    _build() {
+        const container = this._container;
+
+        // -- 2x3 chart grid --
+        const chartsGrid = el('div', { className: 'charts-grid' });
+
+        // Chart definitions: each gets a canvas + TimeSeriesChart or CDFChart
+        const chartDefs = [
+            { key: 'utilization', title: 'Utilization', leftLabel: '%', leftPercent: true },
+            { key: 'avgJct', title: 'Moving Avg JCT (hours)', leftLabel: 'hours' },
+            { key: 'queueArrivals', title: 'Queue & Arrivals', leftLabel: 'jobs', rightLabel: 'arrivals' },
+            { key: 'fragmentation', title: 'Fragmentation', leftLabel: '%', leftPercent: true },
+            { key: 'pendingDemand', title: 'Pending GPU Demand', leftLabel: 'jobs' },
+            { key: 'jctCdf', title: 'JCT CDF', xLabel: 'hours', isCdf: true },
+        ];
+
+        this._charts = {};
+        this._canvases = {};
+        this._seriesIndices = {};
+
+        for (const def of chartDefs) {
+            const canvas = el('canvas', { width: '600', height: '360' });
+            canvas.style.width = '100%';
+            canvas.style.height = '180px';
+
+            const wrapper = el('div', { className: 'chart-wrapper' }, canvas);
+            chartsGrid.appendChild(wrapper);
+            this._canvases[def.key] = canvas;
+
+            if (def.isCdf) {
+                const chart = new CDFChart(canvas, { title: def.title, xLabel: def.xLabel });
+                this._charts[def.key] = chart;
+            } else {
+                const chart = new TimeSeriesChart(canvas, {
+                    title: def.title,
+                    leftLabel: def.leftLabel || '',
+                    rightLabel: def.rightLabel || '',
+                    leftPercent: def.leftPercent || false,
+                });
+                this._charts[def.key] = chart;
+            }
+        }
+
+        // Set up series for each TimeSeriesChart
+        const util = this._charts.utilization;
+        this._seriesIndices.utilOccupancy = util.addSeries({
+            label: 'Occupancy', color: '#4ecca3', fill: 'rgba(78,204,163,0.15)',
+        });
+
+        const jct = this._charts.avgJct;
+        this._seriesIndices.jctMovingAvg = jct.addSeries({
+            label: '100-job MA', color: '#ffb347',
+        });
+
+        const qa = this._charts.queueArrivals;
+        this._seriesIndices.queueDepth = qa.addSeries({
+            label: 'Queue', color: '#4a90d9',
+        });
+        this._seriesIndices.arrivals = qa.addSeries({
+            label: 'Arrivals', color: '#ff6b6b', yAxis: 'right',
+        });
+
+        const frag = this._charts.fragmentation;
+        this._seriesIndices.fragRate = frag.addSeries({
+            label: 'Frag Rate', color: '#e67e22',
+        });
+        this._seriesIndices.fragTotal = frag.addSeries({
+            label: 'Frag/Total', color: '#9b59b6', dash: [4, 4],
+        });
+
+        // Pending demand: series added dynamically as new scale factors appear
+
+        // -- Heatmap section --
+        let heatmapSection = null;
+        if (this._gpuTypes && Object.keys(this._gpuTypes).length > 0) {
+            const totalGpus = Object.values(this._gpuTypes).reduce((a, b) => a + b, 0);
+            // Size the canvas for the GPU count
+            const heatH = totalGpus > 500 ? 160 : 120;
+            const heatCanvas = el('canvas', { width: '800', height: String(heatH * 2) });
+            heatCanvas.style.width = '100%';
+            heatCanvas.style.height = heatH + 'px';
+
+            this._heatmap = new LiveHeatmap(heatCanvas, this._gpuTypes);
+
+            // Per-type utilization bars
+            const typeBars = el('div', { className: 'heatmap-type-bars' });
+            for (const t of this._heatmap.typeList) {
+                const bar = el('div', { className: 'heatmap-type-bar' },
+                    el('div', { className: 'heatmap-type-label' }, `${t.name} (${t.count})`),
+                    el('div', { className: 'progress-bar', style: { height: '6px' } },
+                        el('div', { className: 'heatmap-type-fill', style: { width: '0%' } }),
+                    ),
+                    el('div', { className: 'heatmap-type-pct' }, '0/' + t.count + ' (0%)'),
+                );
+                typeBars.appendChild(bar);
+            }
+            this._heatmap.typeBarsEl = typeBars;
+
+            // Stats row
+            const statsRow = el('div', { className: 'heatmap-stats' },
+                el('span', {}, 'Running: ', el('strong', {}, '0')),
+                el('span', {}, 'Queued: ', el('strong', {}, '0')),
+                el('span', {}, 'Completed: ', el('strong', {}, '0')),
+            );
+            this._heatmap.statsEl = statsRow;
+
+            heatmapSection = el('div', { className: 'experiment-section heatmap-section' },
+                el('div', { className: 'experiment-section-title' }, 'GPU Heatmap'),
+                el('div', { className: 'heatmap-container' }, heatCanvas, typeBars, statsRow),
+            );
+        }
+
+        // -- Assemble --
+        const chartsSection = el('div', { className: 'experiment-section' },
+            el('div', { className: 'experiment-section-title' }, 'Live Metrics'),
+            chartsGrid,
+        );
+
+        container.appendChild(chartsSection);
+        if (heatmapSection) {
+            container.appendChild(heatmapSection);
+        }
+    }
+
+    /**
+     * Push one round of metrics data from the WebSocket event.
+     * @param {object} data - The event.data from a 'round' WebSocket event
+     */
+    pushRound(data) {
+        const metrics = data?.metrics || {};
+        const simTime = data?.elapsed_time || 0;
+        this._roundCount++;
+
+        // -- Utilization --
+        const util = this._charts.utilization;
+        util.pushPoint(this._seriesIndices.utilOccupancy, metrics.utilization || 0);
+        util.pushSimTime(simTime);
+        util.renderLive();
+
+        // -- Queue & Arrivals --
+        const qa = this._charts.queueArrivals;
+        qa.pushPoint(this._seriesIndices.queueDepth, metrics.num_queued || 0);
+        qa.pushPoint(this._seriesIndices.arrivals, metrics.arrivals_count || 0);
+        qa.pushSimTime(simTime);
+        qa.renderLive();
+
+        // -- Fragmentation --
+        const frag = this._charts.fragmentation;
+        frag.pushPoint(this._seriesIndices.fragRate, metrics.frag_rate || 0);
+        frag.pushPoint(this._seriesIndices.fragTotal, metrics.frag_total || 0);
+        frag.pushSimTime(simTime);
+        frag.renderLive();
+
+        // -- JCT: accumulate completions --
+        const completions = metrics.completions || [];
+        for (const c of completions) {
+            const durHours = c.duration / 3600;
+            this._jctWindow.push(durHours);
+            this._allDurations.push(durHours);
+        }
+        // Keep window at 100
+        while (this._jctWindow.length > 100) this._jctWindow.shift();
+
+        // Moving average
+        const jctChart = this._charts.avgJct;
+        const maValue = this._jctWindow.length > 0
+            ? this._jctWindow.reduce((a, b) => a + b, 0) / this._jctWindow.length
+            : 0;
+        jctChart.pushPoint(this._seriesIndices.jctMovingAvg, maValue);
+        jctChart.pushSimTime(simTime);
+        jctChart.renderLive();
+
+        // -- JCT CDF (re-render with updated durations) --
+        if (this._allDurations.length > 0) {
+            const cdfChart = this._charts.jctCdf;
+            cdfChart.setData([{
+                label: 'JCT',
+                color: '#4ecca3',
+                fill: 'rgba(78,204,163,0.1)',
+                durations: this._allDurations,
+            }]);
+            cdfChart.render();
+        }
+
+        // -- Pending GPU Demand (stacked by scale factor) --
+        const pendingDemand = metrics.pending_demand || {};
+        const demandChart = this._charts.pendingDemand;
+        // Ensure series exist for each scale factor
+        const demandColors = ['#4ecca3', '#4a90d9', '#ffb347', '#d94a4a', '#9b59b6', '#e67e22'];
+        for (const sfStr of Object.keys(pendingDemand)) {
+            if (!(sfStr in this._pendingBySf)) {
+                const sfNum = Number(sfStr);
+                const colorIdx = Object.keys(this._pendingBySf).length;
+                const idx = demandChart.addSeries({
+                    label: `SF=${sfNum}`,
+                    color: demandColors[colorIdx % demandColors.length],
+                    fill: demandColors[colorIdx % demandColors.length] + '30',
+                    stacked: true,
+                });
+                this._pendingBySf[sfStr] = idx;
+                // Backfill with zeros for previous rounds
+                for (let r = 0; r < this._roundCount - 1; r++) {
+                    demandChart.series[idx].values.push(0);
+                }
+            }
+        }
+        // Push values for all known scale factors
+        for (const [sfStr, seriesIdx] of Object.entries(this._pendingBySf)) {
+            const val = pendingDemand[sfStr] || 0;
+            demandChart.pushPoint(seriesIdx, val);
+        }
+        demandChart.pushSimTime(simTime);
+        if (demandChart.maxRound > 1) {
+            demandChart.renderLive();
+        }
+
+        // -- Heatmap --
+        if (this._heatmap) {
+            const allocations = data?.allocations || {};
+            this._heatmap.update(allocations, {
+                running: Object.keys(allocations).length,
+                queued: metrics.num_queued || 0,
+                completed: metrics.num_completed || 0,
+            });
+        }
+    }
+
+    /** Reset all charts for a new run. */
+    reset() {
+        this._jctWindow = [];
+        this._allDurations = [];
+        this._pendingBySf = {};
+        this._roundCount = 0;
+        for (const [key, chart] of Object.entries(this._charts)) {
+            if (chart.reset) chart.reset();
+        }
+        this._seriesIndices = {};
+        // Re-add core series
+        const util = this._charts.utilization;
+        this._seriesIndices.utilOccupancy = util.addSeries({
+            label: 'Occupancy', color: '#4ecca3', fill: 'rgba(78,204,163,0.15)',
+        });
+        const jct = this._charts.avgJct;
+        this._seriesIndices.jctMovingAvg = jct.addSeries({
+            label: '100-job MA', color: '#ffb347',
+        });
+        const qa = this._charts.queueArrivals;
+        this._seriesIndices.queueDepth = qa.addSeries({
+            label: 'Queue', color: '#4a90d9',
+        });
+        this._seriesIndices.arrivals = qa.addSeries({
+            label: 'Arrivals', color: '#ff6b6b', yAxis: 'right',
+        });
+        const frag = this._charts.fragmentation;
+        this._seriesIndices.fragRate = frag.addSeries({
+            label: 'Frag Rate', color: '#e67e22',
+        });
+        this._seriesIndices.fragTotal = frag.addSeries({
+            label: 'Frag/Total', color: '#9b59b6', dash: [4, 4],
+        });
     }
 }
 
@@ -1037,7 +1335,7 @@ class Workbench {
 
         // Run tab state
         this._activeWs = null;
-        this._charts = {};
+        this._liveMetricsPanel = null;
         this._runExperiments = [];       // experiment list for current group
         this._experimentRows = new Map(); // experiment_id -> {row, statusBadge, progressFill, progressLabel, timeCell}
         this._completedCount = 0;
@@ -1584,33 +1882,27 @@ class Workbench {
             statTotal, statPending, statRunning, statComplete,
         );
 
-        // -- Live charts (2x2 grid) --
-        const chartConfigs = [
-            { key: 'utilization', label: 'Utilization %', color: '#4ecca3', format: v => v.toFixed(1) + '%' },
-            { key: 'queueDepth', label: 'Queue Depth', color: '#ffb347', format: v => Math.round(v).toString() },
-            { key: 'avgJct', label: 'Avg JCT', color: '#6366f1', format: v => v.toFixed(1) + 's' },
-            { key: 'throughput', label: 'Throughput', color: '#4a90d9', format: v => v.toFixed(1) },
-        ];
-
-        this._charts = {};
-        const chartsGrid = el('div', { className: 'charts-grid' });
-
-        for (const cfg of chartConfigs) {
-            const canvas = el('canvas', { width: '400', height: '240' });
-            canvas.style.width = '100%';
-            canvas.style.height = '120px';
-
-            const wrapper = el('div', { className: 'chart-wrapper' }, canvas);
-            chartsGrid.appendChild(wrapper);
-
-            this._charts[cfg.key] = new MiniChart(canvas, {
-                label: cfg.label,
-                color: cfg.color,
-                format: cfg.format,
-            });
-            // Draw initial empty state
-            this._charts[cfg.key].draw();
+        // -- Live metrics panel (6 charts + heatmap) --
+        // Resolve cluster spec for the heatmap from experiment config
+        let gpuTypes = {};
+        if (this._runExperiments.length > 0) {
+            const firstConfig = this._runExperiments[0].config || {};
+            if (firstConfig.cluster_spec) {
+                gpuTypes = firstConfig.cluster_spec;
+            } else if (firstConfig.cluster_preset) {
+                // Map preset names to GPU types
+                const presetMap = {
+                    'Philly 108': { v100: 36, p100: 36, k80: 36 },
+                    'Alibaba 6200': { G2: 4392, T4: 840, G3: 312, P100: 264, V100M32: 200, V100M16: 192 },
+                };
+                gpuTypes = presetMap[firstConfig.cluster_preset] || { v100: 36, p100: 36, k80: 36 };
+            } else {
+                gpuTypes = { v100: 36, p100: 36, k80: 36 };
+            }
         }
+
+        const liveMetricsContainer = el('div');
+        this._liveMetricsPanel = new LiveMetricsPanel(liveMetricsContainer, gpuTypes);
 
         // -- Experiment list table --
         const tableHead = el('thead', {},
@@ -1669,11 +1961,6 @@ class Workbench {
         const tableContainer = el('div', { className: 'table-container' }, table);
 
         // -- Section labels --
-        const chartsSection = el('div', { className: 'experiment-section' },
-            el('div', { className: 'experiment-section-title' }, 'Live Metrics'),
-            chartsGrid,
-        );
-
         const listSection = el('div', { className: 'experiment-section' },
             el('div', { className: 'experiment-section-title' }, 'Experiments'),
             tableContainer,
@@ -1689,7 +1976,7 @@ class Workbench {
                 controls,
             ),
             summary,
-            chartsSection,
+            liveMetricsContainer,
             listSection,
         );
 
@@ -1716,23 +2003,16 @@ class Workbench {
     // ----------------------------------------------------------
 
     async _runGroup(groupId) {
-        try {
-            await api.runGroup(groupId);
-        } catch (err) {
-            console.error('Failed to run group:', err);
-            this._showToast('Failed to start experiments: ' + err.message, 'error');
-            return;
-        }
-
         // Update button states
         this._updateRunControls(true);
 
-        // Connect WebSocket for live events
+        // Connect WebSocket -- the server-side stream handler runs all
+        // pending experiments and pushes events back.  We do NOT call the
+        // REST ``runGroup`` endpoint first because that would transition
+        // experiment statuses to "queued"/"running" before the WebSocket
+        // handler gets a chance to pick them up, causing a race where the
+        // WS sees "no pending experiments" and closes immediately.
         this._connectWebSocket(groupId);
-
-        // Refresh sidebars to show "running" status
-        await this._refreshDesignSidebar();
-        this._refreshRunSidebar();
     }
 
     _connectWebSocket(groupId) {
@@ -1791,7 +2071,10 @@ class Workbench {
         try {
             const result = await api.exportGroup(groupId);
             this._showToast('Exported successfully. Switching to Analyze tab.', 'success');
-            // Switch to Analyze tab after a short delay
+            // Reload the viz iframe so it picks up the updated manifest,
+            // then switch to the Analyze tab.
+            const iframe = document.getElementById('viz-iframe');
+            if (iframe) iframe.src = iframe.src;
             setTimeout(() => this.switchTab('analyze'), 500);
         } catch (err) {
             console.error('Export failed:', err);
@@ -1806,21 +2089,11 @@ class Workbench {
     _handleRunEvent(event) {
         switch (event.type) {
             case 'round': {
-                const metrics = event.data?.metrics || {};
                 const expId = event.experiment_id;
 
-                // Push to charts
-                if (metrics.utilization !== undefined) {
-                    this._charts.utilization?.push(metrics.utilization * 100);
-                }
-                if (metrics.queued !== undefined) {
-                    this._charts.queueDepth?.push(metrics.queued);
-                }
-                if (event.data?.summary?.avg_jct !== undefined) {
-                    this._charts.avgJct?.push(event.data.summary.avg_jct);
-                }
-                if (metrics.completed !== undefined) {
-                    this._charts.throughput?.push(metrics.completed);
+                // Push all metrics to the live panel
+                if (this._liveMetricsPanel) {
+                    this._liveMetricsPanel.pushRound(event.data);
                 }
 
                 // Update experiment row
@@ -1996,7 +2269,10 @@ class Workbench {
             this._activeWs.close();
             this._activeWs = null;
         }
-        this._charts = {};
+        if (this._liveMetricsPanel) {
+            this._liveMetricsPanel.reset();
+        }
+        this._liveMetricsPanel = null;
         this._experimentRows = new Map();
         this._runExperiments = [];
         this._completedCount = 0;

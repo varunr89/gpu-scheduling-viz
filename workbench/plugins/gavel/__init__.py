@@ -387,6 +387,50 @@ class GavelSimulator(Simulator):
         # ----------------------------------------------------------
         # 6. Run simulation
         # ----------------------------------------------------------
+        # Build a per-round callback that emits RoundEvents live.
+        _round_counter = [0]  # mutable counter for closure
+
+        def round_cb(metrics_dict):
+            """Called by Scheduler.simulate() after each round."""
+            if cancel_event.is_set():
+                return
+            i = _round_counter[0]
+            _round_counter[0] += 1
+            # Build allocations dict: {job_id: [gpu_indices]} from flat array.
+            gpu_allocs = metrics_dict.get("gpu_allocations", [])
+            alloc_map = {}
+            for gpu_idx, job_id in enumerate(gpu_allocs):
+                if job_id != 0:
+                    alloc_map.setdefault(str(job_id), []).append(gpu_idx)
+
+            # Pre-aggregate pending demand by scale factor.
+            pending_demand = {}
+            for entry in metrics_dict.get("queued_with_sf", []):
+                sf = entry["sf"]
+                pending_demand[sf] = pending_demand.get(sf, 0) + 1
+
+            event_queue.put(RoundEvent(
+                round_num=i,
+                elapsed_time=metrics_dict.get("simulated_time", 0.0),
+                allocations=alloc_map,
+                queue=metrics_dict.get("queue_job_ids", []),
+                metrics={
+                    "utilization": metrics_dict.get("utilization", 0.0),
+                    "frag_value": metrics_dict.get("frag_value", 0.0),
+                    "frag_rate": metrics_dict.get("frag_rate", 0.0),
+                    "frag_total": metrics_dict.get("frag_total", 0.0),
+                    "unalloc_pct": metrics_dict.get("unalloc_pct", 0.0),
+                    "occupied_nodes": metrics_dict.get("occupied_nodes", 0),
+                    "allocated_gpus": metrics_dict.get("allocated_gpus", 0),
+                    "total_gpus": metrics_dict.get("total_gpus", 0),
+                    "num_queued": metrics_dict.get("num_queued", 0),
+                    "num_completed": metrics_dict.get("num_completed", 0),
+                    "completions": metrics_dict.get("completions_this_round", []),
+                    "arrivals_count": metrics_dict.get("arrivals_this_round", 0),
+                    "pending_demand": pending_demand,
+                },
+            ))
+
         # Redirect stdout to suppress Gavel's verbose prints.
         devnull = open(os.devnull, "w")
         old_stdout = sys.stdout
@@ -426,6 +470,7 @@ class GavelSimulator(Simulator):
                     completion_rate_threshold=completion_rate_threshold,
                     scale_factor_generator_func=scale_factor_generator_func,
                     reference_worker_type=reference_worker_type,
+                    round_callback=round_cb,
                 )
             else:
                 # fixed_jobs mode
@@ -446,43 +491,16 @@ class GavelSimulator(Simulator):
                     max_simulated_time=max_simulated_time,
                     scale_factor_generator_func=scale_factor_generator_func,
                     reference_worker_type=reference_worker_type,
+                    round_callback=round_cb,
                 )
         finally:
             sys.stdout = old_stdout
             devnull.close()
 
-        # ----------------------------------------------------------
-        # 7. Emit round events from recorded metrics
-        # ----------------------------------------------------------
-        # KNOWN LIMITATION: cancel_event is only checked here, *after*
-        # simulate() has already returned.  Gavel's simulate() does not
-        # accept a cancel callback, so long-running simulations cannot
-        # be interrupted mid-execution.  To fix this, Gavel's
-        # Scheduler.simulate() would need a cancel_fn parameter that it
-        # checks between scheduling rounds.
-        round_metrics = getattr(sched, "_round_metrics_history", [])
-        for i, metrics in enumerate(round_metrics):
-            if cancel_event.is_set():
-                return
-            event_queue.put(RoundEvent(
-                round_num=i,
-                elapsed_time=metrics.get("simulated_time", 0.0),
-                allocations={},   # Per-GPU allocations not cheaply available post-hoc
-                queue=[],         # Queue snapshot not recorded per-round
-                metrics={
-                    "utilization": metrics.get("utilization", 0.0),
-                    "frag_value": metrics.get("frag_value", 0.0),
-                    "frag_rate": metrics.get("frag_rate", 0.0),
-                    "frag_total": metrics.get("frag_total", 0.0),
-                    "unalloc_pct": metrics.get("unalloc_pct", 0.0),
-                    "occupied_nodes": metrics.get("occupied_nodes", 0),
-                    "allocated_gpus": metrics.get("allocated_gpus", 0),
-                    "total_gpus": metrics.get("total_gpus", 0),
-                },
-            ))
+        # Round events were already emitted live via round_callback.
 
         # ----------------------------------------------------------
-        # 8. Compute summary and emit CompleteEvent
+        # 7. Compute summary and emit CompleteEvent
         # ----------------------------------------------------------
         is_saturated = getattr(sched, "saturated", False)
 
@@ -518,7 +536,7 @@ class GavelSimulator(Simulator):
             "saturated": is_saturated,
             "num_completed_jobs": completed,
             "num_failed_jobs": failed,
-            "num_rounds": len(round_metrics),
+            "num_rounds": _round_counter[0],
         }
 
         event_queue.put(CompleteEvent(summary=summary, config=config))

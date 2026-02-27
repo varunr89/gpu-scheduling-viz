@@ -40,6 +40,15 @@ export class CDFChart {
         this.curves = curves;
     }
 
+    /** Clear all curves and state for reuse. */
+    reset() {
+        this.curves = [];
+        this._lastLayout = null;
+        this._snapshot = null;
+        this._hoverX = null;
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+
     render() {
         const ctx = this.ctx;
         const w = this.canvas.width;

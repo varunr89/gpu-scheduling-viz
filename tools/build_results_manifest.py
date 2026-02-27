@@ -6,6 +6,10 @@ then writes a structured manifest.json with both the existing experiment entries
 and the processed results.
 
 Run from: gpu-scheduling-viz/
+
+NOTE: The results section uses its own figure keys (fig9, fig7a, etc.) that are
+display-oriented for the results dashboard. These are NOT the same as experiment
+filter figure values (gavel-fig9, fgd-fig7, etc.) defined in experiment_schema.py.
 """
 
 import csv

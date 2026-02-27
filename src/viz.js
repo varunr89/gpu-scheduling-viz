@@ -28,10 +28,10 @@ class Controller {
         // Chart data (precomputed on sim load)
         this.chartData = [null, null];  // Per-sim: { occupancy[], effectiveUtil[], movingJct[], queueLen[], completedJobs[] }
         // Grouped filters: OR within group, AND between groups
-        this._filterGroups = ['date', 'trace', 'figure', 'algorithm', 'load', 'seed'];
+        this._filterGroups = ['date', 'trace', 'figure', 'scheduler', 'placement', 'load', 'seed'];
         this._activeFilters = [
-            { date: new Set(), trace: new Set(), figure: new Set(), algorithm: new Set(), load: new Set(), seed: new Set() },
-            { date: new Set(), trace: new Set(), figure: new Set(), algorithm: new Set(), load: new Set(), seed: new Set() },
+            { date: new Set(), trace: new Set(), figure: new Set(), scheduler: new Set(), placement: new Set(), load: new Set(), seed: new Set() },
+            { date: new Set(), trace: new Set(), figure: new Set(), scheduler: new Set(), placement: new Set(), load: new Set(), seed: new Set() },
         ];
         this._resultsCharts = []; // Active ResultsChart instances for Results tab
 
@@ -403,17 +403,19 @@ class Controller {
         }
 
         // Sort values within each group
-        const groupLabels = { date: 'Date', trace: 'Trace', figure: 'Figure', algorithm: 'Algo', load: 'Load', seed: 'Seed' };
+        const groupLabels = { date: 'Date', trace: 'Trace', figure: 'Figure', scheduler: 'Sched', placement: 'Place', load: 'Load', seed: 'Seed' };
         const groupHelp = {
-            algorithm: {
-                'gavel': 'Gavel scheduler -- optimized max-min fairness (Fig 9/10) or finish-time fairness (Fig 11)',
-                'baseline': 'Non-optimized fair-share baseline (max-min fairness for Fig 9/10, finish-time fairness for Fig 11)',
+            scheduler: {
+                'mmf': 'Max-min fairness -- default fair-share scheduling',
+                'gavel': 'Gavel -- optimized heterogeneity-aware scheduling',
                 'fifo': 'First-in-first-out scheduling (Tiresias)',
                 'packed': 'Max-min fairness with job packing across GPU types',
-                'gavel+fgd': 'Gavel scheduling with fragmentation-aware (FGD) GPU placement',
-                'gavel-random': 'Gavel scheduling with random GPU placement',
-                'gavel-bestfit': 'Gavel scheduling with best-fit GPU placement',
-                'fgd': 'FGD placement only (no Gavel scheduling)',
+            },
+            placement: {
+                'strided': 'Round-robin GPU assignment (default)',
+                'random': 'Random GPU placement',
+                'bestfit': 'Best-fit bin packing',
+                'fgd': 'Fragmentation Gradient Descent placement',
             },
         };
         const sortedValues = {};

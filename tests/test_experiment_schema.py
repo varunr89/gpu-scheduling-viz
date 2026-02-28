@@ -166,3 +166,48 @@ class TestMigrationMaps:
     def test_figure_targets_are_valid(self):
         for old, new in FIGURE_MIGRATION.items():
             assert new in FIGURES, f"{old} -> {new!r} not in FIGURES"
+
+
+class TestManifestIntegrity:
+    """Validate the actual manifest.json conforms to the schema.
+
+    Acts as a CI gate: fails if any entry uses old fields or invalid values.
+    """
+
+    @pytest.fixture
+    def manifest_experiments(self):
+        import json
+        from pathlib import Path
+        manifest_path = Path(__file__).parent.parent / 'data' / 'manifest.json'
+        if not manifest_path.exists():
+            pytest.skip('manifest.json not found')
+        with open(manifest_path) as f:
+            data = json.load(f)
+        return data.get('experiments', data if isinstance(data, list) else [])
+
+    def test_all_entries_valid(self, manifest_experiments):
+        """Every experiment entry must pass validate_filters."""
+        errors = []
+        for exp in manifest_experiments:
+            try:
+                validate_filters(exp.get('filters', {}))
+            except ValueError as e:
+                errors.append(f"{exp.get('file', '?')}: {e}")
+        assert not errors, f"{len(errors)} invalid entries:\n" + "\n".join(errors[:10])
+
+    def test_no_old_algorithm_field(self, manifest_experiments):
+        """No experiment should have the deprecated 'algorithm' filter."""
+        bad = [e['file'] for e in manifest_experiments if 'algorithm' in e.get('filters', {})]
+        assert not bad, f"{len(bad)} entries still have 'algorithm': {bad[:5]}"
+
+    def test_no_old_figure_values(self, manifest_experiments):
+        """No experiment should use pre-migration figure names."""
+        old_figs = {'fig9', 'fig10', 'fig11', 'fgd-placement', 'fgd-replication', 'fgd-replication-fifo', 'fgd-scale'}
+        bad = [e['file'] for e in manifest_experiments if e.get('filters', {}).get('figure') in old_figs]
+        assert not bad, f"{len(bad)} entries have old figure values: {bad[:5]}"
+
+    def test_no_named_loads(self, manifest_experiments):
+        """No experiment should use named load values."""
+        named = {'low-load', 'mid-load', 'high-load'}
+        bad = [e['file'] for e in manifest_experiments if e.get('filters', {}).get('load') in named]
+        assert not bad, f"{len(bad)} entries have named loads: {bad[:5]}"

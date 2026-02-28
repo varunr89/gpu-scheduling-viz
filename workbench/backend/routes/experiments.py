@@ -157,6 +157,10 @@ async def _run_experiment_task(app, experiment_id: str, simulator, config: dict)
                     summary=event.summary,
                 )
             elif isinstance(event, ErrorEvent):
+                logger.error(
+                    "Experiment %s error: %s\n%s",
+                    experiment_id, event.message, event.traceback,
+                )
                 await db.update_experiment(experiment_id, status="failed")
     except Exception:
         logger.exception("Experiment %s failed", experiment_id)

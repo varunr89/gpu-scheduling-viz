@@ -354,7 +354,13 @@ class GavelSimulator(Simulator):
         # ----------------------------------------------------------
         # 4. Select throughputs file
         # ----------------------------------------------------------
-        if workload_mode == "alibaba":
+        # Explicit throughputs_file overrides auto-detection.
+        throughputs_override = config.get("throughputs_file")
+        if throughputs_override:
+            throughputs_file = os.path.join(
+                _GAVEL_SCHEDULER_DIR, throughputs_override
+            )
+        elif workload_mode == "alibaba":
             throughputs_file = os.path.join(
                 _GAVEL_SCHEDULER_DIR, "simulation_throughputs_alibaba.json"
             )

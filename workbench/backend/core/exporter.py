@@ -243,9 +243,16 @@ class Exporter:
             # The viz binary format expects utilization as a fraction (0.0-1.0).
             # Sources that report 0-100 set ``utilization_pct: true``.
             raw_util = metrics.get("utilization", 0.0)
-            if not isinstance(raw_util, (int, float)):
+            try:
+                raw_util = float(raw_util)
+            except (TypeError, ValueError):
                 raw_util = 0.0
-            utilization = raw_util / 100.0 if metrics.get("utilization_pct") else raw_util
+            # Explicit flag takes priority; fall back to >1 heuristic for
+            # unflagged producers that still report 0-100.
+            is_pct = metrics.get("utilization_pct")
+            if is_pct or (is_pct is None and raw_util > 1.0):
+                raw_util /= 100.0
+            utilization = raw_util
             # Prefer new metric keys, fall back to legacy names.
             queued_count = metrics.get("num_queued")
             if queued_count is None or not isinstance(queued_count, (int, float)):

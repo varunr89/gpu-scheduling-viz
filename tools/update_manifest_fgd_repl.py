@@ -15,12 +15,11 @@ import struct
 import sys
 from pathlib import Path
 
-# Add parent for viz.tools imports; add tools/ for sibling module imports
+# Add parent for viz.tools imports
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
-sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from viz.tools.binary_format import unpack_header, HEADER_SIZE
-from experiment_schema import build_manifest_entry
+from viz.tools.experiment_schema import build_manifest_entry
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 MANIFEST_PATH = DATA_DIR / "manifest.json"

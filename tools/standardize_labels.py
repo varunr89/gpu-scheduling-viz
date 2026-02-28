@@ -12,10 +12,13 @@ Changes:
 This script is idempotent: entries already in new schema are left unchanged.
 """
 import json
+import sys
 from collections import defaultdict
 from pathlib import Path
 
-from experiment_schema import (
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+
+from viz.tools.experiment_schema import (
     ALGORITHM_MIGRATION, FIGURE_MIGRATION, LOAD_MIGRATION,
     validate_filters, build_manifest_entry,
 )

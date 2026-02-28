@@ -240,12 +240,14 @@ class Exporter:
 
             # Metrics from the event.
             metrics = evt.get("metrics", {})
-            # Scheduler reports utilization as a percentage (0-100);
-            # the viz binary format expects a fraction (0.0-1.0).
-            utilization = metrics.get("utilization", 0.0) / 100.0
-            queued_count = metrics.get("num_queued", 0)
-            # num_completed is cumulative from the scheduler.
-            completed_count = metrics.get("num_completed", 0)
+            # The viz binary format expects utilization as a fraction (0.0-1.0).
+            # Gavel scheduler reports 0-100 (percentage); other sources may
+            # already use 0-1.  Normalize conditionally.
+            raw_util = metrics.get("utilization", 0.0)
+            utilization = raw_util / 100.0 if raw_util > 1.0 else raw_util
+            # Prefer new metric keys, fall back to legacy names.
+            queued_count = metrics.get("num_queued", metrics.get("queued", 0))
+            completed_count = metrics.get("num_completed", metrics.get("completed", 0))
 
             queue_list = [int(j) for j in evt.get("queue", [])]
 
@@ -364,7 +366,9 @@ def _resolve_gpu_types(config: dict) -> List[Dict[str, Any]]:
     """
     cluster_spec = config.get("cluster_spec")
     if cluster_spec and isinstance(cluster_spec, dict):
-        # Sorted to match scheduler worker registration order.
+        # Sorted alphabetically to match Gavel scheduler's worker type
+        # ordering (scheduler.py line 928: sorted(cluster_spec.keys())).
+        # GPU index ranges in allocation arrays follow this same order.
         return [
             {"name": name, "count": count}
             for name, count in sorted(cluster_spec.items())

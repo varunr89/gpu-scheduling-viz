@@ -121,3 +121,7 @@ def create_app(
         return {"detail": "workbench.html not found"}
 
     return app
+
+
+# Module-level instance for ``uvicorn workbench.app:app``
+app = create_app()

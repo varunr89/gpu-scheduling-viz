@@ -191,6 +191,7 @@ class Exporter:
 
         config: Dict[str, Any] = {
             "gpu_types": gpu_types,
+            "job_types": _resolve_job_types(exp_config),
             "policy": policy,
             "source": "workbench",
             "experiment_name": experiment.get("name", ""),
@@ -224,7 +225,6 @@ class Exporter:
         num_gpu_types = len(config["gpu_types"])
         rounds: List[dict] = []
         queues: List[List[int]] = []
-        cumulative_completed = 0
 
         for evt in round_events:
             # Build per-GPU allocation array from {job_id: [gpu_indices]}.
@@ -240,10 +240,12 @@ class Exporter:
 
             # Metrics from the event.
             metrics = evt.get("metrics", {})
-            utilization = metrics.get("utilization", 0.0)
-            queued_count = metrics.get("queued", 0)
-            completed_count = metrics.get("completed", 0)
-            cumulative_completed += completed_count
+            # Scheduler reports utilization as a percentage (0-100);
+            # the viz binary format expects a fraction (0.0-1.0).
+            utilization = metrics.get("utilization", 0.0) / 100.0
+            queued_count = metrics.get("num_queued", 0)
+            # num_completed is cumulative from the scheduler.
+            completed_count = metrics.get("num_completed", 0)
 
             queue_list = [int(j) for j in evt.get("queue", [])]
 
@@ -256,7 +258,7 @@ class Exporter:
                 "utilization": utilization,
                 "jobs_running": metrics.get("running", running_count),
                 "jobs_queued": queued_count if queued_count else len(queue_list),
-                "jobs_completed": cumulative_completed,
+                "jobs_completed": completed_count,
                 "avg_jct": metrics.get("avg_jct", 0.0),
                 "completion_rate": metrics.get("completion_rate", 0.0),
                 "gpu_used": gpu_used,
@@ -337,18 +339,41 @@ class Exporter:
 # Module-level helpers
 # ======================================================================
 
+_CLUSTER_PRESETS = {
+    "Philly 108": [
+        {"name": "k80", "count": 36},
+        {"name": "p100", "count": 36},
+        {"name": "v100", "count": 36},
+    ],
+    "Alibaba 6200": [
+        {"name": "G2", "count": 4392},
+        {"name": "G3", "count": 312},
+        {"name": "P100", "count": 264},
+        {"name": "T4", "count": 840},
+        {"name": "V100M16", "count": 192},
+        {"name": "V100M32", "count": 200},
+    ],
+}
+
+
 def _resolve_gpu_types(config: dict) -> List[Dict[str, Any]]:
     """Resolve gpu_types list from experiment config.
 
-    Checks ``cluster_spec`` (dict of name -> count), then falls back
-    to a small default cluster.
+    Checks ``cluster_spec`` (dict of name -> count), ``cluster_preset``
+    (named preset), or ``gpu_types`` (already resolved).
     """
     cluster_spec = config.get("cluster_spec")
     if cluster_spec and isinstance(cluster_spec, dict):
+        # Sorted to match scheduler worker registration order.
         return [
             {"name": name, "count": count}
-            for name, count in cluster_spec.items()
+            for name, count in sorted(cluster_spec.items())
         ]
+
+    # Resolve named preset.
+    preset_name = config.get("cluster_preset")
+    if preset_name and preset_name in _CLUSTER_PRESETS:
+        return list(_CLUSTER_PRESETS[preset_name])
 
     # Check if gpu_types is already in the right format.
     gpu_types = config.get("gpu_types")
@@ -357,6 +382,16 @@ def _resolve_gpu_types(config: dict) -> List[Dict[str, Any]]:
 
     # Fall back to a default small cluster.
     return [{"name": "gpu", "count": 4}]
+
+
+def _resolve_job_types(config: dict) -> List[Dict[str, Any]]:
+    """Return a job_types list for the viz tool config.
+
+    The exporter sets all jobs to type_id=0, so a single generic entry
+    is sufficient.  We include it so the viz tool's ``config.job_types``
+    iteration does not throw.
+    """
+    return [{"id": 0, "name": "Job", "category": "generic"}]
 
 
 def _compute_gpu_used(

@@ -8,8 +8,8 @@
 // ================================================================
 // Imports (ES module -- viz chart classes for live metrics)
 // ================================================================
-import { TimeSeriesChart } from '/src/timeseries.js';
-import { CDFChart } from '/src/pdf-chart.js';
+import { TimeSeriesChart } from '/src/timeseries.js?v=20260228';
+import { CDFChart } from '/src/pdf-chart.js?v=20260228';
 
 // ================================================================
 // API Client
@@ -96,6 +96,15 @@ export const api = {
             method: 'POST',
         });
         if (!resp.ok) throw new Error(`POST export: ${resp.status}`);
+        return resp.json();
+    },
+
+    // -- Clone --
+    async cloneGroup(id) {
+        const resp = await fetch(`${API_BASE}/experiments/${encodeURIComponent(id)}/clone`, {
+            method: 'POST',
+        });
+        if (!resp.ok) throw new Error(`POST clone: ${resp.status}`);
         return resp.json();
     },
 
@@ -324,9 +333,7 @@ class LiveMetricsPanel {
         this._seriesIndices = {};
 
         for (const def of chartDefs) {
-            const canvas = el('canvas', { width: '600', height: '360' });
-            canvas.style.width = '100%';
-            canvas.style.height = '180px';
+            const canvas = el('canvas', { width: '570', height: '200' });
 
             const wrapper = el('div', { className: 'chart-wrapper' }, canvas);
             chartsGrid.appendChild(wrapper);
@@ -653,6 +660,81 @@ class SchemaForm {
             if (propSchema.default !== undefined && propSchema.default !== null) {
                 this.values[key] = propSchema.default;
             }
+        }
+    }
+
+    /**
+     * Reconstruct form state from saved experiment configs.
+     *
+     * Reverse-engineers sweep ranges and seed lists from the flat
+     * list of per-experiment config dicts stored in the database.
+     *
+     * @param {Object[]} experiments - Array of experiment objects with .config and .policy
+     */
+    loadFromExperiments(experiments) {
+        if (!experiments || experiments.length === 0) return;
+
+        // Extract policy from the first experiment
+        if (experiments[0].policy) {
+            this.values['policy'] = experiments[0].policy;
+        }
+
+        // Collect all unique values per config key across experiments
+        const keyValues = {};  // key -> Set of values
+        for (const exp of experiments) {
+            const cfg = exp.config || {};
+            for (const [key, val] of Object.entries(cfg)) {
+                if (key === 'policy' || key === 'seed') continue;
+                if (!keyValues[key]) keyValues[key] = new Set();
+                keyValues[key].add(val);
+            }
+        }
+
+        // For each key, decide: single value or sweep
+        for (const [key, valSet] of Object.entries(keyValues)) {
+            const vals = [...valSet];
+            if (vals.length === 1) {
+                // Single value -- set as base config
+                this.values[key] = vals[0];
+            } else if (vals.length > 1 && vals.every(v => typeof v === 'number')) {
+                // Multiple numeric values -- reconstruct as sweep only if
+                // they form a strict arithmetic progression (equal spacing).
+                const sorted = vals.slice().sort((a, b) => a - b);
+                const diffs = [];
+                for (let i = 1; i < sorted.length; i++) {
+                    diffs.push(Math.round((sorted[i] - sorted[i - 1]) * 1000) / 1000);
+                }
+                const positiveDiffs = diffs.filter(d => d > 0);
+                const step = positiveDiffs.length > 0 ? positiveDiffs[0] : 1;
+                const isArithmetic = positiveDiffs.every(d => Math.abs(d - step) < 0.001);
+
+                if (isArithmetic && positiveDiffs.length > 0) {
+                    this.sweepModes[key] = true;
+                    this.sweepValues[key] = {
+                        from: sorted[0],
+                        to: sorted[sorted.length - 1],
+                        step,
+                    };
+                } else {
+                    // Non-uniform spacing -- use first experiment's value
+                    this.values[key] = vals[0];
+                }
+            } else {
+                // Multiple non-numeric values -- use first experiment's value
+                this.values[key] = vals[0];
+            }
+        }
+
+        // Extract seed values
+        const seedSet = new Set();
+        for (const exp of experiments) {
+            const seed = (exp.config || {}).seed;
+            if (seed !== undefined && seed !== null) {
+                seedSet.add(seed);
+            }
+        }
+        if (seedSet.size > 0) {
+            this.seeds = [...seedSet].sort((a, b) => a - b).join(', ');
         }
     }
 
@@ -1601,19 +1683,21 @@ class Workbench {
             )
         );
 
-        // Fetch schema, presets, and policy specs
+        // Fetch schema, presets, policy specs, and group detail (for experiments)
         const simulatorName = group.simulator || 'Gavel';
-        let schema, policySpecs, presets;
+        let schema, policySpecs, presets, groupDetail;
         try {
-            const [schemaData, presetsData] = await Promise.all([
+            const [schemaData, presetsData, detail] = await Promise.all([
                 api.getSchema(simulatorName),
                 api.getPresets(simulatorName),
+                api.getGroup(groupId),
             ]);
             schema = schemaData.config_schema;
             policySpecs = schemaData.policy_specs || [];
             presets = presetsData;
+            groupDetail = detail;
         } catch (err) {
-            console.error('Failed to fetch schema/presets:', err);
+            console.error('Failed to fetch group data:', err);
             clearChildren(main);
             main.appendChild(
                 el('div', { className: 'experiment-detail' },
@@ -1621,7 +1705,7 @@ class Workbench {
                     el('div', { className: 'card' },
                         el('div', { className: 'card-body' },
                             el('p', { className: 'text-red' },
-                                'Failed to load simulator schema. Is the backend running?',
+                                'Failed to load group data. Is the backend running?',
                             ),
                             el('p', { className: 'text-muted mt-sm', style: { fontSize: '0.78rem' } },
                                 String(err),
@@ -1633,12 +1717,13 @@ class Workbench {
             return;
         }
 
-        // Build the form
+        // Build the form, passing saved experiments for pre-population
         clearChildren(main);
-        this._renderDesignForm(main, group, schema, policySpecs, presets);
+        const experiments = groupDetail.experiments || [];
+        this._renderDesignForm(main, group, schema, policySpecs, presets, experiments);
     }
 
-    _renderDesignForm(container, group, schema, policySpecs, presets) {
+    _renderDesignForm(container, group, schema, policySpecs, presets, experiments = []) {
         const detail = el('div', { className: 'experiment-detail' });
 
         // Header
@@ -1651,10 +1736,13 @@ class Workbench {
             ),
         );
 
-        // Create the schema form
+        // Create the schema form and pre-populate from saved experiments
         const form = new SchemaForm(schema, policySpecs, presets, () => {
             // Update preview on any change -- handled internally by SchemaForm
         });
+        if (experiments.length > 0) {
+            form.loadFromExperiments(experiments);
+        }
         this._currentSchemaForm = form;
 
         const formEl = form.render();
@@ -1856,10 +1944,16 @@ class Workbench {
             this._runBtnCancel.disabled = false;
         }
 
+        this._runBtnClone = el('button', {
+            className: 'btn btn-secondary',
+            onClick: () => this._cloneAndRerun(group.id),
+        }, 'Clone');
+
         const controls = el('div', { className: 'run-controls' },
             this._runBtnRun,
             this._runBtnCancel,
             this._runBtnExport,
+            this._runBtnClone,
         );
 
         // -- Summary stat cards --
@@ -2079,6 +2173,20 @@ class Workbench {
         } catch (err) {
             console.error('Export failed:', err);
             this._showToast('Export failed: ' + err.message, 'error');
+        }
+    }
+
+    async _cloneAndRerun(groupId) {
+        try {
+            const newGroup = await api.cloneGroup(groupId);
+            this._showToast(`Cloned as "${newGroup.name}"`, 'success');
+            // Refresh sidebars and select the new group in the Run tab
+            await this._refreshDesignSidebar();
+            this._refreshRunSidebar();
+            this._selectRunGroup(newGroup.id);
+        } catch (err) {
+            console.error('Clone failed:', err);
+            this._showToast('Clone failed: ' + err.message, 'error');
         }
     }
 

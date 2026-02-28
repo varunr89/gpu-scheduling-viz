@@ -1102,16 +1102,6 @@ tbody tr:hover {
     margin-top: 0.5rem;
 }
 
-.charts-grid .chart-wrapper {
-    min-height: 180px;
-}
-
-.charts-grid .chart-wrapper canvas {
-    display: block;
-    width: 100%;
-    height: 180px;
-}
-
 /* Heatmap section (Run tab) */
 .heatmap-section {
     margin-top: 1rem;

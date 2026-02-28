@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -91,6 +92,51 @@ async def delete_group(group_id: str, request: Request) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Clone
+# ---------------------------------------------------------------------------
+
+def _derive_clone_name(name: str) -> str:
+    """Derive a clone name: 'X' -> 'X (copy)', 'X (copy)' -> 'X (copy 2)', etc."""
+    m = re.match(r'^(.*) \(copy(?: (\d+))?\)$', name)
+    if m:
+        base = m.group(1)
+        n = int(m.group(2)) if m.group(2) else 1
+        return f"{base} (copy {n + 1})"
+    return f"{name} (copy)"
+
+
+@router.post("/{group_id}/clone")
+async def clone_group(group_id: str, request: Request) -> dict:
+    """Clone a group and all its experiments with fresh 'pending' status."""
+    db = request.app.state.db
+
+    source = await db.get_group(group_id)
+    if source is None:
+        raise HTTPException(status_code=404, detail="Group not found")
+
+    experiments = await db.list_experiments(group_id)
+
+    new_name = _derive_clone_name(source["name"])
+    new_group = await db.create_group(
+        name=new_name,
+        simulator=source["simulator"],
+    )
+
+    new_experiments = []
+    for exp in experiments:
+        new_exp = await db.create_experiment(
+            group_id=new_group["id"],
+            config=exp["config"],
+            policy=exp["policy"],
+            name=exp["name"],
+        )
+        new_experiments.append(new_exp)
+
+    new_group["experiments"] = new_experiments
+    return new_group
+
+
+# ---------------------------------------------------------------------------
 # Execution
 # ---------------------------------------------------------------------------
 
@@ -146,9 +192,12 @@ async def run_group(group_id: str, request: Request) -> dict:
 
     # Spawn tasks only after all statuses are updated.
     for exp in queued:
+        # Merge the policy into the config so the simulator has everything
+        # it needs in a single dict.
+        run_config = {**exp["config"], "policy": exp["policy"]}
         asyncio.create_task(
             _run_experiment_task(
-                request.app, exp["id"], simulator, exp["config"]
+                request.app, exp["id"], simulator, run_config
             )
         )
 
@@ -270,6 +319,11 @@ async def stream_events(websocket: WebSocket, group_id: str) -> None:
     round_count = 0
 
     try:
+        # Merge policy into config for each experiment so the simulator
+        # receives everything in a single dict.
+        for exp in pending:
+            exp["config"] = {**exp["config"], "policy": exp["policy"]}
+
         async for event in runner.run_group(group_id, pending, simulator):
             if cancel_requested.is_set():
                 break

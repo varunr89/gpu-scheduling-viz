@@ -179,11 +179,14 @@ class TestManifestIntegrity:
         import json
         from pathlib import Path
         manifest_path = Path(__file__).parent.parent / 'data' / 'manifest.json'
-        if not manifest_path.exists():
-            pytest.skip('manifest.json not found')
+        assert manifest_path.exists(), f"manifest.json not found at {manifest_path}"
         with open(manifest_path) as f:
             data = json.load(f)
-        return data.get('experiments', data if isinstance(data, list) else [])
+        assert isinstance(data, dict), f"Expected dict, got {type(data).__name__}"
+        assert 'experiments' in data, "manifest.json missing 'experiments' key"
+        exps = data['experiments']
+        assert len(exps) > 0, "manifest.json has no experiments"
+        return exps
 
     def test_all_entries_valid(self, manifest_experiments):
         """Every experiment entry must pass validate_filters."""

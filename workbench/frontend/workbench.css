@@ -1386,6 +1386,7 @@ tbody tr:hover {
 .text-accent  { color: var(--wb-accent); }
 .text-green   { color: var(--wb-green); }
 .text-red     { color: var(--wb-red); }
+.text-error   { color: var(--wb-red); }
 .text-yellow  { color: var(--wb-yellow); }
 .text-muted   { color: var(--wb-text-muted); }
 .text-mono    { font-family: var(--wb-font-mono); }

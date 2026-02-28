@@ -241,6 +241,29 @@ class GavelSimulator(Simulator):
                     "default": "WARNING",
                     "description": "Gavel scheduler log verbosity.",
                 },
+                "throughputs_file": {
+                    "type": "string",
+                    "enum": [
+                        "simulation_throughputs.json",
+                        "simulation_throughputs_alibaba.json",
+                        "simulation_throughputs_cluster_h.json",
+                    ],
+                    "description": (
+                        "Throughputs JSON file. Must match the GPU types in "
+                        "cluster_spec. Philly uses simulation_throughputs.json, "
+                        "Alibaba uses simulation_throughputs_alibaba.json, "
+                        "generic/Cluster H uses simulation_throughputs_cluster_h.json."
+                    ),
+                },
+                "reference_worker_type": {
+                    "type": "string",
+                    "description": (
+                        "GPU type used as the reference for job generation. "
+                        "Must be a key in the throughputs file. "
+                        "E.g. 'v100' for Philly, 'V100M32' for Alibaba, "
+                        "'generic' for Cluster H."
+                    ),
+                },
             },
             "required": ["policy"],
             "additionalProperties": False,
@@ -286,10 +309,10 @@ class GavelSimulator(Simulator):
         """
         try:
             self._run_impl(config, event_queue, cancel_event)
-        except Exception:
+        except Exception as exc:
             tb = traceback.format_exc()
             event_queue.put(ErrorEvent(
-                message="Gavel simulation failed",
+                message=str(exc) or "Gavel simulation failed",
                 traceback=tb,
             ))
 
@@ -354,21 +377,10 @@ class GavelSimulator(Simulator):
         # ----------------------------------------------------------
         # 4. Select throughputs file
         # ----------------------------------------------------------
-        # Auto-detect: a cluster_spec with only "generic" GPUs uses
-        # the Cluster H throughputs file and reference worker type.
-        is_generic_cluster = (
-            set(cluster_spec.keys()) == {"generic"}
-        )
-
-        # Explicit throughputs_file overrides auto-detection.
         throughputs_override = config.get("throughputs_file")
         if throughputs_override:
             throughputs_file = os.path.join(
                 _GAVEL_SCHEDULER_DIR, throughputs_override
-            )
-        elif is_generic_cluster:
-            throughputs_file = os.path.join(
-                _GAVEL_SCHEDULER_DIR, "simulation_throughputs_cluster_h.json"
             )
         elif workload_mode == "alibaba":
             throughputs_file = os.path.join(
@@ -377,6 +389,24 @@ class GavelSimulator(Simulator):
         else:
             throughputs_file = os.path.join(
                 _GAVEL_SCHEDULER_DIR, "simulation_throughputs.json"
+            )
+
+        # Validate: GPU types in cluster_spec must exist in the
+        # throughputs file.  Fail fast with a clear message.
+        import json as _json
+        with open(throughputs_file) as _f:
+            _tp_keys = set(_json.load(_f).keys())
+        # Strip "_unconsolidated" suffixes for the comparison.
+        tp_gpu_types = {k for k in _tp_keys if not k.endswith("_unconsolidated")}
+        missing = set(cluster_spec.keys()) - tp_gpu_types
+        if missing:
+            tp_basename = os.path.basename(throughputs_file)
+            raise ValueError(
+                f"GPU type(s) {missing} from cluster_spec not found in "
+                f"throughputs file '{tp_basename}'. "
+                f"Available GPU types: {sorted(tp_gpu_types)}. "
+                f"Set 'throughputs_file' to the correct file (e.g. "
+                f"'simulation_throughputs_cluster_h.json' for generic clusters)."
             )
 
         # ----------------------------------------------------------
@@ -467,16 +497,22 @@ class GavelSimulator(Simulator):
                 if "max_simulated_time" not in config and lam > 0:
                     max_simulated_time = int(window_end * lam * 1.5)
 
-                # Scale factor generator for Alibaba workload.
+                # Scale factor generator and reference worker type.
                 scale_factor_generator_func = None
                 reference_worker_type = config.get("reference_worker_type", "v100")
-                if is_generic_cluster:
-                    reference_worker_type = "generic"
-                    scale_factor_generator_func = gavel_utils._generate_scale_factor_alibaba
-                elif workload_mode == "alibaba":
+                if workload_mode == "alibaba":
                     scale_factor_generator_func = gavel_utils._generate_scale_factor_alibaba
                     if reference_worker_type == "v100":
                         reference_worker_type = "V100M32"
+
+                # Validate reference_worker_type exists in the throughputs.
+                if reference_worker_type not in tp_gpu_types:
+                    raise ValueError(
+                        f"reference_worker_type '{reference_worker_type}' not found "
+                        f"in throughputs file '{os.path.basename(throughputs_file)}'. "
+                        f"Available types: {sorted(tp_gpu_types)}. "
+                        f"Set 'reference_worker_type' to a valid GPU type."
+                    )
 
                 sched.simulate(
                     cluster_spec=cluster_spec,
@@ -496,13 +532,18 @@ class GavelSimulator(Simulator):
                 # fixed_jobs mode
                 scale_factor_generator_func = None
                 reference_worker_type = config.get("reference_worker_type", "v100")
-                if is_generic_cluster:
-                    reference_worker_type = "generic"
-                    scale_factor_generator_func = gavel_utils._generate_scale_factor_alibaba
-                elif workload_mode == "alibaba":
+                if workload_mode == "alibaba":
                     scale_factor_generator_func = gavel_utils._generate_scale_factor_alibaba
                     if reference_worker_type == "v100":
                         reference_worker_type = "V100M32"
+
+                if reference_worker_type not in tp_gpu_types:
+                    raise ValueError(
+                        f"reference_worker_type '{reference_worker_type}' not found "
+                        f"in throughputs file '{os.path.basename(throughputs_file)}'. "
+                        f"Available types: {sorted(tp_gpu_types)}. "
+                        f"Set 'reference_worker_type' to a valid GPU type."
+                    )
 
                 sched.simulate(
                     cluster_spec=cluster_spec,

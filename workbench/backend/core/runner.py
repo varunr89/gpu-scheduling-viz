@@ -47,9 +47,9 @@ def _worker_fn(
     """
     try:
         simulator.run(config, event_queue, cancel_event)
-    except Exception:
+    except Exception as exc:
         tb = traceback.format_exc()
-        event_queue.put(ErrorEvent(message="Simulation failed", traceback=tb))
+        event_queue.put(ErrorEvent(message=str(exc) or "Simulation failed", traceback=tb))
     finally:
         event_queue.put(_SENTINEL)
 

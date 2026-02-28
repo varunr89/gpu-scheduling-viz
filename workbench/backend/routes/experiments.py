@@ -161,10 +161,18 @@ async def _run_experiment_task(app, experiment_id: str, simulator, config: dict)
                     "Experiment %s error: %s\n%s",
                     experiment_id, event.message, event.traceback,
                 )
-                await db.update_experiment(experiment_id, status="failed")
-    except Exception:
+                await db.update_experiment(
+                    experiment_id,
+                    status="failed",
+                    error_message=event.message,
+                )
+    except Exception as exc:
         logger.exception("Experiment %s failed", experiment_id)
-        await db.update_experiment(experiment_id, status="failed")
+        await db.update_experiment(
+            experiment_id,
+            status="failed",
+            error_message=str(exc),
+        )
 
 
 @router.post("/{group_id}/run")
@@ -353,8 +361,11 @@ async def stream_events(websocket: WebSocket, group_id: str) -> None:
                     summary=exp_data.get("summary"),
                 )
             elif event["type"] == "error":
+                error_msg = event.get("data", {}).get("message", "Unknown error")
                 await db.update_experiment(
-                    event["experiment_id"], status="failed"
+                    event["experiment_id"],
+                    status="failed",
+                    error_message=error_msg,
                 )
 
             try:

@@ -33,6 +33,7 @@ class Database:
         await self._db.execute("PRAGMA busy_timeout=5000")
         await self._db.execute("PRAGMA foreign_keys=ON")
         await self._create_tables()
+        await self._migrate()
 
     async def close(self) -> None:
         """Close the database connection."""
@@ -64,6 +65,7 @@ class Database:
                 status        TEXT NOT NULL DEFAULT 'pending',
                 progress_pct  REAL NOT NULL DEFAULT 0,
                 summary_json  TEXT,
+                error_message TEXT,
                 wall_time_s   REAL,
                 created_at    TEXT NOT NULL,
                 completed_at  TEXT
@@ -78,6 +80,21 @@ class Database:
             );
             """
         )
+
+    # ------------------------------------------------------------------
+    # Migrations
+    # ------------------------------------------------------------------
+
+    async def _migrate(self) -> None:
+        """Apply incremental schema migrations for existing databases."""
+        # Add error_message column if it doesn't exist yet.
+        cursor = await self._db.execute("PRAGMA table_info(experiments)")
+        columns = {row[1] for row in await cursor.fetchall()}
+        if "error_message" not in columns:
+            await self._db.execute(
+                "ALTER TABLE experiments ADD COLUMN error_message TEXT"
+            )
+            await self._db.commit()
 
     # ------------------------------------------------------------------
     # Helpers
@@ -186,6 +203,7 @@ class Database:
     # SQL injection via dynamic column interpolation.
     _UPDATABLE_COLUMNS = frozenset({
         "status", "progress_pct", "wall_time_s", "completed_at",
+        "error_message",
     })
 
     async def update_experiment(self, experiment_id: str, **kwargs) -> dict:

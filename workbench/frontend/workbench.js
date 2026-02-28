@@ -1972,8 +1972,11 @@ class Workbench {
         const statComplete = this._buildRunStat('0', 'Complete', 'text-green');
         this._runStatEls.complete = statComplete.querySelector('.run-stat-value');
 
+        const statFailed = this._buildRunStat('0', 'Failed', 'text-error');
+        this._runStatEls.failed = statFailed.querySelector('.run-stat-value');
+
         const summary = el('div', { className: 'run-summary' },
-            statTotal, statPending, statRunning, statComplete,
+            statTotal, statPending, statRunning, statComplete, statFailed,
         );
 
         // -- Live metrics panel (6 charts + heatmap) --
@@ -2006,6 +2009,7 @@ class Workbench {
                 el('th', {}, 'Status'),
                 el('th', { style: { minWidth: '140px' } }, 'Progress'),
                 el('th', {}, 'Time'),
+                el('th', {}, 'Error'),
             ),
         );
 
@@ -2028,12 +2032,19 @@ class Workbench {
 
             const timeCell = el('span', { className: 'text-mono text-muted' }, '--');
 
+            const errorCell = el('span', {
+                className: 'text-mono text-error',
+                style: { fontSize: '0.85em', maxWidth: '300px', display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+                title: exp.error_message || '',
+            }, exp.error_message || '');
+
             const row = el('tr', { className: 'experiment-row' },
                 el('td', { className: 'run-experiment-name' }, expName),
                 el('td', {}, expPolicy),
                 el('td', {}, badgeEl),
                 el('td', {}, progressCell),
                 el('td', {}, timeCell),
+                el('td', {}, errorCell),
             );
 
             tableBody.appendChild(row);
@@ -2045,6 +2056,7 @@ class Workbench {
                 progressFill,
                 progressLabel,
                 timeCell,
+                errorCell,
                 startTime: null,
                 lastRound: 0,
                 totalRounds: null,
@@ -2285,6 +2297,11 @@ class Workbench {
             entry.progressLabel.appendChild(document.createTextNode('100%'));
         } else if (status === 'failed') {
             entry.progressFill.classList.add('progress-danger');
+            if (errorMsg && entry.errorCell) {
+                clearChildren(entry.errorCell);
+                entry.errorCell.title = errorMsg;
+                entry.errorCell.appendChild(document.createTextNode(errorMsg));
+            }
         }
 
         // Update wall time
@@ -2322,7 +2339,11 @@ class Workbench {
         }
         if (this._runStatEls.complete) {
             clearChildren(this._runStatEls.complete);
-            this._runStatEls.complete.appendChild(document.createTextNode(String(completed + failed)));
+            this._runStatEls.complete.appendChild(document.createTextNode(String(completed)));
+        }
+        if (this._runStatEls.failed) {
+            clearChildren(this._runStatEls.failed);
+            this._runStatEls.failed.appendChild(document.createTextNode(String(failed)));
         }
     }
 

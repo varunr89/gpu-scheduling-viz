@@ -354,11 +354,21 @@ class GavelSimulator(Simulator):
         # ----------------------------------------------------------
         # 4. Select throughputs file
         # ----------------------------------------------------------
+        # Auto-detect: a cluster_spec with only "generic" GPUs uses
+        # the Cluster H throughputs file and reference worker type.
+        is_generic_cluster = (
+            set(cluster_spec.keys()) == {"generic"}
+        )
+
         # Explicit throughputs_file overrides auto-detection.
         throughputs_override = config.get("throughputs_file")
         if throughputs_override:
             throughputs_file = os.path.join(
                 _GAVEL_SCHEDULER_DIR, throughputs_override
+            )
+        elif is_generic_cluster:
+            throughputs_file = os.path.join(
+                _GAVEL_SCHEDULER_DIR, "simulation_throughputs_cluster_h.json"
             )
         elif workload_mode == "alibaba":
             throughputs_file = os.path.join(
@@ -460,7 +470,10 @@ class GavelSimulator(Simulator):
                 # Scale factor generator for Alibaba workload.
                 scale_factor_generator_func = None
                 reference_worker_type = config.get("reference_worker_type", "v100")
-                if workload_mode == "alibaba":
+                if is_generic_cluster:
+                    reference_worker_type = "generic"
+                    scale_factor_generator_func = gavel_utils._generate_scale_factor_alibaba
+                elif workload_mode == "alibaba":
                     scale_factor_generator_func = gavel_utils._generate_scale_factor_alibaba
                     if reference_worker_type == "v100":
                         reference_worker_type = "V100M32"
@@ -483,7 +496,10 @@ class GavelSimulator(Simulator):
                 # fixed_jobs mode
                 scale_factor_generator_func = None
                 reference_worker_type = config.get("reference_worker_type", "v100")
-                if workload_mode == "alibaba":
+                if is_generic_cluster:
+                    reference_worker_type = "generic"
+                    scale_factor_generator_func = gavel_utils._generate_scale_factor_alibaba
+                elif workload_mode == "alibaba":
                     scale_factor_generator_func = gavel_utils._generate_scale_factor_alibaba
                     if reference_worker_type == "v100":
                         reference_worker_type = "V100M32"

@@ -2,6 +2,7 @@
 
 All scripts that write to manifest.json must import from here.
 """
+import datetime
 import re
 
 # Canonical allowed values
@@ -70,8 +71,10 @@ def validate_filters(filters):
         raise ValueError(f"Invalid scheduler {f['scheduler']!r}. Allowed: {sorted(SCHEDULERS)}")
     if f['placement'] not in PLACEMENTS:
         raise ValueError(f"Invalid placement {f['placement']!r}. Allowed: {sorted(PLACEMENTS)}")
-    if not _DATE_RE.match(f['date']):
-        raise ValueError(f"Invalid date {f['date']!r}. Expected YYYY-MM-DD format.")
+    try:
+        datetime.date.fromisoformat(f['date'])
+    except (ValueError, TypeError):
+        raise ValueError(f"Invalid date {f['date']!r}. Expected valid YYYY-MM-DD date.")
     if not _LOAD_RE.match(f['load']):
         raise ValueError(f"Invalid load {f['load']!r}. Expected '<number>jph' (e.g. '60jph', '0.8jph').")
     if not _SEED_RE.match(f['seed']):

@@ -13,7 +13,7 @@ This script is idempotent: entries already in new schema are left unchanged.
 """
 import json
 import sys
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
@@ -77,16 +77,30 @@ def main():
     with open(manifest_path) as f:
         manifest = json.load(f)
 
+    # Known entries that can be safely skipped (no algorithm field, non-standard schema)
+    KNOWN_SKIPPABLE = {'workbench_3d3eb166.viz.bin'}
+
     old_experiments = manifest['experiments']
     new_experiments = []
     skipped = []
+    unexpected_skips = []
 
     for exp in old_experiments:
         result = migrate_entry(exp)
         if result is None:
-            skipped.append(exp.get('label', exp.get('file', '?')))
+            label = exp.get('label', exp.get('file', '?'))
+            skipped.append(label)
+            if exp.get('file') not in KNOWN_SKIPPABLE:
+                unexpected_skips.append(label)
         else:
             new_experiments.append(result)
+
+    if unexpected_skips:
+        print(f"ERROR: {len(unexpected_skips)} unexpected entries could not be migrated:")
+        for label in unexpected_skips:
+            print(f"  {label}")
+        print("\nAdd to KNOWN_SKIPPABLE if these should be dropped, or fix migration maps.")
+        sys.exit(1)
 
     manifest['experiments'] = new_experiments
 
@@ -114,12 +128,12 @@ def main():
         print(f"  {fig}: {len(exps)} exps, schedulers={scheds}, placements={places}")
 
     # Check for dupes
-    labels = [e['label'] for e in new_experiments]
-    dupes = set(l for l in labels if labels.count(l) > 1)
+    label_counts = Counter(e['label'] for e in new_experiments)
+    dupes = {l: c for l, c in label_counts.items() if c > 1}
     if dupes:
         print(f"\nWARNING: {len(dupes)} duplicate labels")
         for d in sorted(dupes):
-            print(f"  ({labels.count(d)}x) {d}")
+            print(f"  ({dupes[d]}x) {d}")
     else:
         print(f"\nNo duplicate labels.")
 

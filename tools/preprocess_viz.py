@@ -522,12 +522,13 @@ if __name__ == '__main__':
                 policy = m.group(1)
 
     metadata = None
-    if args.figure:
-        metadata = {
-            'date': args.date, 'trace': args.trace, 'figure': args.figure,
-            'scheduler': args.scheduler, 'placement': args.placement,
-            'load': args.load, 'seed': args.seed,
-        }
+    _meta_fields = ['figure', 'scheduler', 'placement', 'trace', 'date', 'seed', 'load']
+    _meta_provided = [f for f in _meta_fields if getattr(args, f) is not None]
+    if _meta_provided:
+        _meta_missing = [f for f in _meta_fields if getattr(args, f) is None]
+        if _meta_missing:
+            parser.error(f"When providing metadata, all 7 fields are required. Missing: {', '.join('--' + f for f in _meta_missing)}")
+        metadata = {f: getattr(args, f) for f in _meta_fields}
 
     print(f"Processing {args.log_path} (policy={policy})...")
     preprocess_simulation(

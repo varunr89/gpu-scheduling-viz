@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -245,6 +246,8 @@ class Exporter:
             raw_util = metrics.get("utilization", 0.0)
             try:
                 raw_util = float(raw_util)
+                if not math.isfinite(raw_util):
+                    raw_util = 0.0
             except (TypeError, ValueError):
                 raw_util = 0.0
             # Explicit flag takes priority; fall back to >1 heuristic for

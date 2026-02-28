@@ -241,13 +241,18 @@ class Exporter:
             # Metrics from the event.
             metrics = evt.get("metrics", {})
             # The viz binary format expects utilization as a fraction (0.0-1.0).
-            # Gavel scheduler reports 0-100 (percentage); other sources may
-            # already use 0-1.  Normalize conditionally.
+            # Sources that report 0-100 set ``utilization_pct: true``.
             raw_util = metrics.get("utilization", 0.0)
-            utilization = raw_util / 100.0 if raw_util > 1.0 else raw_util
+            if not isinstance(raw_util, (int, float)):
+                raw_util = 0.0
+            utilization = raw_util / 100.0 if metrics.get("utilization_pct") else raw_util
             # Prefer new metric keys, fall back to legacy names.
-            queued_count = metrics.get("num_queued", metrics.get("queued", 0))
-            completed_count = metrics.get("num_completed", metrics.get("completed", 0))
+            queued_count = metrics.get("num_queued")
+            if queued_count is None or not isinstance(queued_count, (int, float)):
+                queued_count = metrics.get("queued", 0)
+            completed_count = metrics.get("num_completed")
+            if completed_count is None or not isinstance(completed_count, (int, float)):
+                completed_count = metrics.get("completed", 0)
 
             queue_list = [int(j) for j in evt.get("queue", [])]
 

@@ -416,6 +416,7 @@ class GavelSimulator(Simulator):
                 queue=metrics_dict.get("queue_job_ids", []),
                 metrics={
                     "utilization": metrics_dict.get("utilization", 0.0),
+                    "utilization_pct": True,  # Gavel reports 0-100
                     "frag_value": metrics_dict.get("frag_value", 0.0),
                     "frag_rate": metrics_dict.get("frag_rate", 0.0),
                     "frag_total": metrics_dict.get("frag_total", 0.0),

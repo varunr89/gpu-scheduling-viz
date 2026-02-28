@@ -248,7 +248,7 @@ class Exporter:
                 raw_util = float(raw_util)
                 if not math.isfinite(raw_util):
                     raw_util = 0.0
-            except (TypeError, ValueError):
+            except (TypeError, ValueError, OverflowError):
                 raw_util = 0.0
             # Explicit flag takes priority; fall back to >1 heuristic for
             # unflagged producers that still report 0-100.

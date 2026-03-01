@@ -33,6 +33,10 @@ export class TimeSeriesChart {
         // Optional: simTime array for x-axis labels (index -> simulated seconds)
         this.simTimes = null;
 
+        // User-overridden Y-axis max (null = auto-scale)
+        this.userLeftMax = null;
+        this.userRightMax = null;
+
         // Crosshair hover state
         this._hoverX = null; // pixel x within canvas, or null
 
@@ -46,6 +50,86 @@ export class TimeSeriesChart {
             this._hoverX = null;
             this._drawCrosshair();
         });
+
+        // Double-click on Y-axis area to set custom max
+        canvas.addEventListener('dblclick', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const px = (e.clientX - rect.left) * scaleX;
+
+            const leftEdge = PADDING.left;
+            const rightEdge = canvas.width - PADDING.right;
+
+            if (px < leftEdge + 30) {
+                // Left Y-axis area (labels + a bit into plot)
+                this._promptAxisMax('left');
+            } else if (px > rightEdge - 30) {
+                // Right Y-axis area
+                const hasRight = this.series.some(s => s.yAxis === 'right');
+                if (hasRight) this._promptAxisMax('right');
+            }
+        });
+    }
+
+    /**
+     * Prompt user for a custom Y-axis max value via an input overlay.
+     * @param {'left'|'right'} axis
+     */
+    _promptAxisMax(axis) {
+        const current = axis === 'left' ? this.userLeftMax : this.userRightMax;
+        const autoRange = this._lastLayout
+            ? (axis === 'left' ? this._lastLayout.leftRange : this._lastLayout.rightRange)
+            : null;
+        const currentMax = current != null ? current : (autoRange ? autoRange.max : 0);
+
+        // Create a small floating input next to the canvas
+        const rect = this.canvas.getBoundingClientRect();
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.step = 'any';
+        input.value = currentMax.toFixed(1);
+        Object.assign(input.style, {
+            position: 'fixed',
+            left: (axis === 'left' ? rect.left - 5 : rect.right - 60) + 'px',
+            top: (rect.top + PADDING.top) + 'px',
+            width: '65px',
+            padding: '3px 5px',
+            fontSize: '11px',
+            fontFamily: 'monospace',
+            background: '#1a1f35',
+            color: '#e0e0e0',
+            border: '1px solid #4ecca3',
+            borderRadius: '3px',
+            zIndex: '9999',
+            outline: 'none',
+        });
+
+        document.body.appendChild(input);
+        input.focus();
+        input.select();
+
+        let committed = false;
+        const commit = () => {
+            if (committed) return;
+            committed = true;
+            const val = parseFloat(input.value);
+            if (input.value.trim() === '' || input.value.trim().toLowerCase() === 'auto') {
+                // Reset to auto
+                if (axis === 'left') this.userLeftMax = null;
+                else this.userRightMax = null;
+            } else if (!isNaN(val) && val > 0) {
+                if (axis === 'left') this.userLeftMax = val;
+                else this.userRightMax = val;
+            }
+            input.remove();
+            this.render(this.currentRound);
+        };
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') commit();
+            if (e.key === 'Escape') { committed = true; input.remove(); }
+        });
+        input.addEventListener('blur', commit);
     }
 
     setData(series) {
@@ -161,12 +245,16 @@ export class TimeSeriesChart {
             this._drawSeries(ctx, s, plotX, plotY, plotW, plotH, range, xRange);
         }
 
-        // Title
+        // Title + axis lock indicators
         ctx.fillStyle = '#4ecca3';
         ctx.font = 'bold 11px -apple-system, sans-serif';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
-        ctx.fillText(this.title, plotX, 4);
+        let titleText = this.title;
+        if (this.userLeftMax != null || this.userRightMax != null) {
+            titleText += '  [pinned]';
+        }
+        ctx.fillText(titleText, plotX, 4);
 
         // Legend (horizontal, below plot)
         this._drawLegend(ctx, plotX, plotY + plotH + 18, plotW);
@@ -201,7 +289,7 @@ export class TimeSeriesChart {
         const lo = Math.max(0, xRange.start);
         const stackedAccum = {};  // index -> accumulated value
         for (const s of this.series) {
-            if (s.yAxis !== axis) continue;
+            if ((s.yAxis || 'left') !== axis) continue;
             const hi = Math.min(s.values.length, xRange.end + 1);
             for (let i = lo; i < hi; i++) {
                 if (s.stacked) {
@@ -218,6 +306,14 @@ export class TimeSeriesChart {
         const range = max - min || 1;
         min = Math.max(0, min - range * 0.05);
         max = max + range * 0.1;
+
+        // Apply user override if set
+        const userMax = axis === 'left' ? this.userLeftMax : this.userRightMax;
+        if (userMax != null) {
+            max = userMax;
+            min = 0;
+        }
+
         return { min, max };
     }
 

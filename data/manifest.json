@@ -11804,6 +11804,846 @@
       },
       "rounds": 1001,
       "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig10_max_min_fairness_0.2jph_multi_s0.viz.bin",
+      "label": "2026-03-01 | gavel-fig10 | Philly | Mmf/Strided | 0.2jph | s0 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig10",
+        "scheduler": "mmf",
+        "placement": "strided",
+        "load": "0.2jph",
+        "seed": "s0"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig10_max_min_fairness_0.2jph_multi_s1.viz.bin",
+      "label": "2026-03-01 | gavel-fig10 | Philly | Mmf/Strided | 0.2jph | s1 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig10",
+        "scheduler": "mmf",
+        "placement": "strided",
+        "load": "0.2jph",
+        "seed": "s1"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig10_max_min_fairness_0.2jph_multi_s2.viz.bin",
+      "label": "2026-03-01 | gavel-fig10 | Philly | Mmf/Strided | 0.2jph | s2 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig10",
+        "scheduler": "mmf",
+        "placement": "strided",
+        "load": "0.2jph",
+        "seed": "s2"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig10_max_min_fairness_0.4jph_multi_s0.viz.bin",
+      "label": "2026-03-01 | gavel-fig10 | Philly | Mmf/Strided | 0.4jph | s0 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig10",
+        "scheduler": "mmf",
+        "placement": "strided",
+        "load": "0.4jph",
+        "seed": "s0"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig10_max_min_fairness_0.4jph_multi_s1.viz.bin",
+      "label": "2026-03-01 | gavel-fig10 | Philly | Mmf/Strided | 0.4jph | s1 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig10",
+        "scheduler": "mmf",
+        "placement": "strided",
+        "load": "0.4jph",
+        "seed": "s1"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig10_max_min_fairness_0.4jph_multi_s2.viz.bin",
+      "label": "2026-03-01 | gavel-fig10 | Philly | Mmf/Strided | 0.4jph | s2 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig10",
+        "scheduler": "mmf",
+        "placement": "strided",
+        "load": "0.4jph",
+        "seed": "s2"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig10_max_min_fairness_0.6jph_multi_s0.viz.bin",
+      "label": "2026-03-01 | gavel-fig10 | Philly | Mmf/Strided | 0.6jph | s0 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig10",
+        "scheduler": "mmf",
+        "placement": "strided",
+        "load": "0.6jph",
+        "seed": "s0"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig10_max_min_fairness_0.6jph_multi_s1.viz.bin",
+      "label": "2026-03-01 | gavel-fig10 | Philly | Mmf/Strided | 0.6jph | s1 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig10",
+        "scheduler": "mmf",
+        "placement": "strided",
+        "load": "0.6jph",
+        "seed": "s1"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig10_max_min_fairness_0.6jph_multi_s2.viz.bin",
+      "label": "2026-03-01 | gavel-fig10 | Philly | Mmf/Strided | 0.6jph | s2 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig10",
+        "scheduler": "mmf",
+        "placement": "strided",
+        "load": "0.6jph",
+        "seed": "s2"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig10_max_min_fairness_2.6jph_multi_s0.viz.bin",
+      "label": "2026-03-01 | gavel-fig10 | Philly | Mmf/Strided | 2.6jph | s0 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig10",
+        "scheduler": "mmf",
+        "placement": "strided",
+        "load": "2.6jph",
+        "seed": "s0"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig10_max_min_fairness_2.6jph_multi_s1.viz.bin",
+      "label": "2026-03-01 | gavel-fig10 | Philly | Mmf/Strided | 2.6jph | s1 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig10",
+        "scheduler": "mmf",
+        "placement": "strided",
+        "load": "2.6jph",
+        "seed": "s1"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig10_max_min_fairness_2.6jph_multi_s2.viz.bin",
+      "label": "2026-03-01 | gavel-fig10 | Philly | Mmf/Strided | 2.6jph | s2 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig10",
+        "scheduler": "mmf",
+        "placement": "strided",
+        "load": "2.6jph",
+        "seed": "s2"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig10_max_min_fairness_2.8jph_multi_s1.viz.bin",
+      "label": "2026-03-01 | gavel-fig10 | Philly | Mmf/Strided | 2.8jph | s1 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig10",
+        "scheduler": "mmf",
+        "placement": "strided",
+        "load": "2.8jph",
+        "seed": "s1"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig10_max_min_fairness_perf_0.2jph_multi_s0.viz.bin",
+      "label": "2026-03-01 | gavel-fig10 | Philly | Gavel/Strided | 0.2jph | s0 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig10",
+        "scheduler": "gavel",
+        "placement": "strided",
+        "load": "0.2jph",
+        "seed": "s0"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig10_max_min_fairness_perf_0.2jph_multi_s1.viz.bin",
+      "label": "2026-03-01 | gavel-fig10 | Philly | Gavel/Strided | 0.2jph | s1 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig10",
+        "scheduler": "gavel",
+        "placement": "strided",
+        "load": "0.2jph",
+        "seed": "s1"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig10_max_min_fairness_perf_0.2jph_multi_s2.viz.bin",
+      "label": "2026-03-01 | gavel-fig10 | Philly | Gavel/Strided | 0.2jph | s2 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig10",
+        "scheduler": "gavel",
+        "placement": "strided",
+        "load": "0.2jph",
+        "seed": "s2"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig10_max_min_fairness_perf_0.4jph_multi_s0.viz.bin",
+      "label": "2026-03-01 | gavel-fig10 | Philly | Gavel/Strided | 0.4jph | s0 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig10",
+        "scheduler": "gavel",
+        "placement": "strided",
+        "load": "0.4jph",
+        "seed": "s0"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig10_max_min_fairness_perf_0.4jph_multi_s1.viz.bin",
+      "label": "2026-03-01 | gavel-fig10 | Philly | Gavel/Strided | 0.4jph | s1 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig10",
+        "scheduler": "gavel",
+        "placement": "strided",
+        "load": "0.4jph",
+        "seed": "s1"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig10_max_min_fairness_perf_0.4jph_multi_s2.viz.bin",
+      "label": "2026-03-01 | gavel-fig10 | Philly | Gavel/Strided | 0.4jph | s2 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig10",
+        "scheduler": "gavel",
+        "placement": "strided",
+        "load": "0.4jph",
+        "seed": "s2"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig10_max_min_fairness_perf_0.6jph_multi_s1.viz.bin",
+      "label": "2026-03-01 | gavel-fig10 | Philly | Gavel/Strided | 0.6jph | s1 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig10",
+        "scheduler": "gavel",
+        "placement": "strided",
+        "load": "0.6jph",
+        "seed": "s1"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig10_max_min_fairness_perf_0.6jph_multi_s2.viz.bin",
+      "label": "2026-03-01 | gavel-fig10 | Philly | Gavel/Strided | 0.6jph | s2 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig10",
+        "scheduler": "gavel",
+        "placement": "strided",
+        "load": "0.6jph",
+        "seed": "s2"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig10_max_min_fairness_perf_2.6jph_multi_s2.viz.bin",
+      "label": "2026-03-01 | gavel-fig10 | Philly | Gavel/Strided | 2.6jph | s2 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig10",
+        "scheduler": "gavel",
+        "placement": "strided",
+        "load": "2.6jph",
+        "seed": "s2"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig10_max_min_fairness_perf_2.8jph_multi_s0.viz.bin",
+      "label": "2026-03-01 | gavel-fig10 | Philly | Gavel/Strided | 2.8jph | s0 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig10",
+        "scheduler": "gavel",
+        "placement": "strided",
+        "load": "2.8jph",
+        "seed": "s0"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig10_max_min_fairness_perf_2.8jph_multi_s1.viz.bin",
+      "label": "2026-03-01 | gavel-fig10 | Philly | Gavel/Strided | 2.8jph | s1 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig10",
+        "scheduler": "gavel",
+        "placement": "strided",
+        "load": "2.8jph",
+        "seed": "s1"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig11_finish_time_fairness_0.2jph_multi_s0.viz.bin",
+      "label": "2026-03-01 | gavel-fig11 | Philly | Gavel/Strided | 0.2jph | s0 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig11",
+        "scheduler": "gavel",
+        "placement": "strided",
+        "load": "0.2jph",
+        "seed": "s0"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig11_finish_time_fairness_0.2jph_multi_s1.viz.bin",
+      "label": "2026-03-01 | gavel-fig11 | Philly | Gavel/Strided | 0.2jph | s1 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig11",
+        "scheduler": "gavel",
+        "placement": "strided",
+        "load": "0.2jph",
+        "seed": "s1"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig11_finish_time_fairness_0.2jph_multi_s2.viz.bin",
+      "label": "2026-03-01 | gavel-fig11 | Philly | Gavel/Strided | 0.2jph | s2 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig11",
+        "scheduler": "gavel",
+        "placement": "strided",
+        "load": "0.2jph",
+        "seed": "s2"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig11_finish_time_fairness_0.4jph_multi_s0.viz.bin",
+      "label": "2026-03-01 | gavel-fig11 | Philly | Gavel/Strided | 0.4jph | s0 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig11",
+        "scheduler": "gavel",
+        "placement": "strided",
+        "load": "0.4jph",
+        "seed": "s0"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig11_finish_time_fairness_0.4jph_multi_s1.viz.bin",
+      "label": "2026-03-01 | gavel-fig11 | Philly | Gavel/Strided | 0.4jph | s1 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig11",
+        "scheduler": "gavel",
+        "placement": "strided",
+        "load": "0.4jph",
+        "seed": "s1"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig11_finish_time_fairness_0.4jph_multi_s2.viz.bin",
+      "label": "2026-03-01 | gavel-fig11 | Philly | Gavel/Strided | 0.4jph | s2 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig11",
+        "scheduler": "gavel",
+        "placement": "strided",
+        "load": "0.4jph",
+        "seed": "s2"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig11_finish_time_fairness_0.6jph_multi_s0.viz.bin",
+      "label": "2026-03-01 | gavel-fig11 | Philly | Gavel/Strided | 0.6jph | s0 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig11",
+        "scheduler": "gavel",
+        "placement": "strided",
+        "load": "0.6jph",
+        "seed": "s0"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig11_finish_time_fairness_0.6jph_multi_s1.viz.bin",
+      "label": "2026-03-01 | gavel-fig11 | Philly | Gavel/Strided | 0.6jph | s1 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig11",
+        "scheduler": "gavel",
+        "placement": "strided",
+        "load": "0.6jph",
+        "seed": "s1"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig11_finish_time_fairness_0.6jph_multi_s2.viz.bin",
+      "label": "2026-03-01 | gavel-fig11 | Philly | Gavel/Strided | 0.6jph | s2 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig11",
+        "scheduler": "gavel",
+        "placement": "strided",
+        "load": "0.6jph",
+        "seed": "s2"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig11_finish_time_fairness_perf_0.2jph_multi_s0.viz.bin",
+      "label": "2026-03-01 | gavel-fig11 | Philly | Gavel/Strided | 0.2jph | s0 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig11",
+        "scheduler": "gavel",
+        "placement": "strided",
+        "load": "0.2jph",
+        "seed": "s0"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig11_finish_time_fairness_perf_0.2jph_multi_s1.viz.bin",
+      "label": "2026-03-01 | gavel-fig11 | Philly | Gavel/Strided | 0.2jph | s1 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig11",
+        "scheduler": "gavel",
+        "placement": "strided",
+        "load": "0.2jph",
+        "seed": "s1"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig11_finish_time_fairness_perf_0.2jph_multi_s2.viz.bin",
+      "label": "2026-03-01 | gavel-fig11 | Philly | Gavel/Strided | 0.2jph | s2 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig11",
+        "scheduler": "gavel",
+        "placement": "strided",
+        "load": "0.2jph",
+        "seed": "s2"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig11_finish_time_fairness_perf_0.4jph_multi_s0.viz.bin",
+      "label": "2026-03-01 | gavel-fig11 | Philly | Gavel/Strided | 0.4jph | s0 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig11",
+        "scheduler": "gavel",
+        "placement": "strided",
+        "load": "0.4jph",
+        "seed": "s0"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig11_finish_time_fairness_perf_0.4jph_multi_s1.viz.bin",
+      "label": "2026-03-01 | gavel-fig11 | Philly | Gavel/Strided | 0.4jph | s1 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig11",
+        "scheduler": "gavel",
+        "placement": "strided",
+        "load": "0.4jph",
+        "seed": "s1"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig11_finish_time_fairness_perf_0.4jph_multi_s2.viz.bin",
+      "label": "2026-03-01 | gavel-fig11 | Philly | Gavel/Strided | 0.4jph | s2 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig11",
+        "scheduler": "gavel",
+        "placement": "strided",
+        "load": "0.4jph",
+        "seed": "s2"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig11_finish_time_fairness_perf_0.6jph_multi_s1.viz.bin",
+      "label": "2026-03-01 | gavel-fig11 | Philly | Gavel/Strided | 0.6jph | s1 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig11",
+        "scheduler": "gavel",
+        "placement": "strided",
+        "load": "0.6jph",
+        "seed": "s1"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig11_finish_time_fairness_perf_0.6jph_multi_s2.viz.bin",
+      "label": "2026-03-01 | gavel-fig11 | Philly | Gavel/Strided | 0.6jph | s2 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig11",
+        "scheduler": "gavel",
+        "placement": "strided",
+        "load": "0.6jph",
+        "seed": "s2"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig9_max_min_fairness_6.0jph_single_s0.viz.bin",
+      "label": "2026-03-01 | gavel-fig9 | Philly | Mmf/Strided | 6.0jph | s0 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig9",
+        "scheduler": "mmf",
+        "placement": "strided",
+        "load": "6.0jph",
+        "seed": "s0"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig9_max_min_fairness_6.0jph_single_s1.viz.bin",
+      "label": "2026-03-01 | gavel-fig9 | Philly | Mmf/Strided | 6.0jph | s1 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig9",
+        "scheduler": "mmf",
+        "placement": "strided",
+        "load": "6.0jph",
+        "seed": "s1"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig9_max_min_fairness_6.0jph_single_s2.viz.bin",
+      "label": "2026-03-01 | gavel-fig9 | Philly | Mmf/Strided | 6.0jph | s2 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig9",
+        "scheduler": "mmf",
+        "placement": "strided",
+        "load": "6.0jph",
+        "seed": "s2"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig9_max_min_fairness_6.4jph_single_s0.viz.bin",
+      "label": "2026-03-01 | gavel-fig9 | Philly | Mmf/Strided | 6.4jph | s0 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig9",
+        "scheduler": "mmf",
+        "placement": "strided",
+        "load": "6.4jph",
+        "seed": "s0"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig9_max_min_fairness_6.4jph_single_s1.viz.bin",
+      "label": "2026-03-01 | gavel-fig9 | Philly | Mmf/Strided | 6.4jph | s1 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig9",
+        "scheduler": "mmf",
+        "placement": "strided",
+        "load": "6.4jph",
+        "seed": "s1"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig9_max_min_fairness_6.4jph_single_s2.viz.bin",
+      "label": "2026-03-01 | gavel-fig9 | Philly | Mmf/Strided | 6.4jph | s2 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig9",
+        "scheduler": "mmf",
+        "placement": "strided",
+        "load": "6.4jph",
+        "seed": "s2"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig9_max_min_fairness_6.8jph_single_s0.viz.bin",
+      "label": "2026-03-01 | gavel-fig9 | Philly | Mmf/Strided | 6.8jph | s0 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig9",
+        "scheduler": "mmf",
+        "placement": "strided",
+        "load": "6.8jph",
+        "seed": "s0"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig9_max_min_fairness_6.8jph_single_s1.viz.bin",
+      "label": "2026-03-01 | gavel-fig9 | Philly | Mmf/Strided | 6.8jph | s1 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig9",
+        "scheduler": "mmf",
+        "placement": "strided",
+        "load": "6.8jph",
+        "seed": "s1"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig9_max_min_fairness_6.8jph_single_s2.viz.bin",
+      "label": "2026-03-01 | gavel-fig9 | Philly | Mmf/Strided | 6.8jph | s2 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig9",
+        "scheduler": "mmf",
+        "placement": "strided",
+        "load": "6.8jph",
+        "seed": "s2"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig9_max_min_fairness_7.2jph_single_s0.viz.bin",
+      "label": "2026-03-01 | gavel-fig9 | Philly | Mmf/Strided | 7.2jph | s0 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig9",
+        "scheduler": "mmf",
+        "placement": "strided",
+        "load": "7.2jph",
+        "seed": "s0"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig9_max_min_fairness_7.2jph_single_s1.viz.bin",
+      "label": "2026-03-01 | gavel-fig9 | Philly | Mmf/Strided | 7.2jph | s1 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig9",
+        "scheduler": "mmf",
+        "placement": "strided",
+        "load": "7.2jph",
+        "seed": "s1"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig9_max_min_fairness_7.2jph_single_s2.viz.bin",
+      "label": "2026-03-01 | gavel-fig9 | Philly | Mmf/Strided | 7.2jph | s2 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig9",
+        "scheduler": "mmf",
+        "placement": "strided",
+        "load": "7.2jph",
+        "seed": "s2"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig9_max_min_fairness_perf_0.4jph_single_s0.viz.bin",
+      "label": "2026-03-01 | gavel-fig9 | Philly | Gavel/Strided | 0.4jph | s0 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig9",
+        "scheduler": "gavel",
+        "placement": "strided",
+        "load": "0.4jph",
+        "seed": "s0"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig9_max_min_fairness_perf_0.4jph_single_s1.viz.bin",
+      "label": "2026-03-01 | gavel-fig9 | Philly | Gavel/Strided | 0.4jph | s1 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig9",
+        "scheduler": "gavel",
+        "placement": "strided",
+        "load": "0.4jph",
+        "seed": "s1"
+      },
+      "rounds": 1001,
+      "complete": true
+    },
+    {
+      "file": "gavel_replication/gavel_repl_fig9_max_min_fairness_perf_0.4jph_single_s2.viz.bin",
+      "label": "2026-03-01 | gavel-fig9 | Philly | Gavel/Strided | 0.4jph | s2 | 1001r",
+      "filters": {
+        "date": "2026-03-01",
+        "trace": "philly",
+        "figure": "gavel-fig9",
+        "scheduler": "gavel",
+        "placement": "strided",
+        "load": "0.4jph",
+        "seed": "s2"
+      },
+      "rounds": 1001,
+      "complete": true
     }
   ],
   "results": {

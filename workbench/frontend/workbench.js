@@ -8,7 +8,7 @@
 // ================================================================
 // Imports (ES module -- viz chart classes for live metrics)
 // ================================================================
-import { TimeSeriesChart } from '/src/timeseries.js?v=20260228';
+import { TimeSeriesChart } from '/src/timeseries.js?v=20260228c';
 import { CDFChart } from '/src/pdf-chart.js?v=20260228';
 
 // ================================================================
@@ -736,6 +736,12 @@ class SchemaForm {
         if (seedSet.size > 0) {
             this.seeds = [...seedSet].sort((a, b) => a - b).join(', ');
         }
+
+        // If both cluster_preset and cluster_spec are loaded, prefer preset
+        // to avoid conflicts in the backend resolver.
+        if (this.values['cluster_preset'] && this.values['cluster_spec']) {
+            delete this.values['cluster_spec'];
+        }
     }
 
     /**
@@ -951,6 +957,11 @@ class SchemaForm {
             id: `field-${key}`,
             onChange: (e) => {
                 this.values[key] = e.target.value || undefined;
+                // When a preset is selected, clear any direct cluster_spec
+                // to avoid conflicts (preset takes effect via _resolve_cluster_spec).
+                if (e.target.value) {
+                    delete this.values['cluster_spec'];
+                }
                 // Re-render the GPU breakdown
                 clearChildren(breakdownDiv);
                 if (e.target.value && this.presets[e.target.value]) {
@@ -1726,8 +1737,14 @@ class Workbench {
     _renderDesignForm(container, group, schema, policySpecs, presets, experiments = []) {
         const detail = el('div', { className: 'experiment-detail' });
 
-        // Header
-        detail.appendChild(el('h2', {}, group.name));
+        // Editable group name
+        const nameInput = el('input', {
+            type: 'text',
+            className: 'editable-group-name',
+            value: group.name,
+            onChange: (e) => { group.name = e.target.value.trim() || group.name; },
+        });
+        detail.appendChild(nameInput);
         detail.appendChild(
             el('div', { className: 'flex items-center gap-sm mb-md' },
                 el('span', { className: `group-badge status-${statusClass(group.status)}` }, group.status),
@@ -1759,9 +1776,14 @@ class Workbench {
             onClick: () => this._saveAndRun(group),
         }, 'Save & Go to Run');
 
+        const duplicateBtn = el('button', {
+            className: 'btn btn-secondary',
+            onClick: () => this._duplicateGroup(group),
+        }, 'Duplicate');
+
         detail.appendChild(
             el('div', { className: 'form-actions' },
-                el('div', { className: 'btn-group' }, saveBtn, saveAndRunBtn),
+                el('div', { className: 'btn-group' }, saveBtn, saveAndRunBtn, duplicateBtn),
             ),
         );
 
@@ -1818,6 +1840,32 @@ class Workbench {
             this._selectRunGroup(newGroup.id);
         } catch (err) {
             console.error('Failed to save and run group:', err);
+        }
+    }
+
+    async _duplicateGroup(group) {
+        try {
+            // First save the current form state to the source group
+            // so the clone picks up any edits.
+            if (this._currentSchemaForm) {
+                const specs = this._currentSchemaForm.generateExperimentSpecs();
+                if (specs.length > 0) {
+                    await api.deleteGroup(group.id);
+                    const saved = await api.createGroup({
+                        name: group.name,
+                        simulator: group.simulator || 'Gavel',
+                        experiments: specs,
+                    });
+                    group = saved;
+                }
+            }
+
+            const newGroup = await api.cloneGroup(group.id);
+            this._showToast(`Duplicated as "${newGroup.name}"`, 'success');
+            await this._refreshDesignSidebar();
+            this._selectDesignGroup(newGroup.id);
+        } catch (err) {
+            console.error('Failed to duplicate group:', err);
         }
     }
 

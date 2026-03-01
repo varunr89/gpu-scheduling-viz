@@ -1,5 +1,15 @@
 data/*.log
+data/*.viz.bin
+data/fgd_replication/
+data/gavel_replication/
 __pycache__/
 *.pyc
 .DS_Store
 gpu-scheduling-viz
+debug-*.png
+test-*.js
+debug-*.js
+*.mov
+.venv/
+.claude/
+workbench/data/

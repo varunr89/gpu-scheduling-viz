@@ -953,6 +953,27 @@ tbody tr:hover {
     margin-bottom: 1rem;
 }
 
+.editable-group-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--wb-text-primary);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 2px 6px;
+    margin-bottom: 0.75rem;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.15s;
+}
+.editable-group-name:hover {
+    border-color: var(--wb-border);
+}
+.editable-group-name:focus {
+    border-color: var(--wb-accent);
+    background: var(--wb-bg-panel);
+}
+
 .experiment-section {
     margin-bottom: 1.5rem;
 }

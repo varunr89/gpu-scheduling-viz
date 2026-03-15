@@ -472,6 +472,10 @@ class LiveMetricsPanel {
         }
         // Keep window at 100
         while (this._jctWindow.length > 100) this._jctWindow.shift();
+        // Cap CDF durations at 2000 to prevent memory leak
+        if (this._allDurations.length > 2000) {
+            this._allDurations.splice(0, this._allDurations.length - 2000);
+        }
 
         // Moving average
         const jctChart = this._charts.avgJct;

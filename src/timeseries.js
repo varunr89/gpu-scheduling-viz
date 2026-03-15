@@ -159,6 +159,7 @@ export class TimeSeriesChart {
 
     /**
      * Push a single data point to an existing series.
+     * Cap at MAX_LIVE_POINTS to prevent unbounded memory growth.
      * @param {number} seriesIdx - Index returned by addSeries()
      * @param {number} value - The data value
      */
@@ -166,6 +167,9 @@ export class TimeSeriesChart {
         const s = this.series[seriesIdx];
         if (!s) return;
         s.values.push(value);
+        if (s.values.length > TimeSeriesChart.MAX_LIVE_POINTS) {
+            s.values.splice(0, s.values.length - TimeSeriesChart.MAX_LIVE_POINTS);
+        }
         if (s.values.length > this.maxRound) {
             this.maxRound = s.values.length;
         }
@@ -173,11 +177,15 @@ export class TimeSeriesChart {
 
     /**
      * Append a sim-time value for the current round.
+     * Cap at MAX_LIVE_POINTS to prevent unbounded memory growth.
      * @param {number} seconds - Simulated time in seconds
      */
     pushSimTime(seconds) {
         if (!this.simTimes) this.simTimes = [];
         this.simTimes.push(seconds);
+        if (this.simTimes.length > TimeSeriesChart.MAX_LIVE_POINTS) {
+            this.simTimes.splice(0, this.simTimes.length - TimeSeriesChart.MAX_LIVE_POINTS);
+        }
     }
 
     /** Render at the latest round (convenience for live use). */
@@ -653,3 +661,6 @@ export class TimeSeriesChart {
         }
     }
 }
+
+/** Max data points kept in memory during live streaming. */
+TimeSeriesChart.MAX_LIVE_POINTS = 1000;

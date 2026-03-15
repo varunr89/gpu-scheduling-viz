@@ -194,9 +194,9 @@ class GavelSimulator(Simulator):
                     "description": "Generate jobs with scale_factor > 1.",
                 },
                 "gpus_per_node": {
-                    "type": ["integer", "null"],
+                    "type": ["integer", "object", "null"],
                     "default": None,
-                    "description": "GPUs per server node (null = flat, 1 GPU = 1 node).",
+                    "description": "GPUs per server node. Int = uniform size. Dict = per-type mixed sizes (e.g. {\"generic\": {\"8\": 462, \"4\": 310}}). Null = flat.",
                 },
                 "enable_fgd": {
                     "type": "boolean",
@@ -290,6 +290,30 @@ class GavelSimulator(Simulator):
                 },
                 gpus_per_node=8,
             ),
+            "Cluster H 5592": ClusterSpec(
+                gpu_types={"generic": 5592},
+                gpus_per_node={"generic": {"8": 462, "4": 310, "2": 228, "1": 200}},
+            ),
+            "Cluster H 560": ClusterSpec(
+                gpu_types={"generic": 560},
+                gpus_per_node={"generic": {"8": 46, "4": 31, "2": 23, "1": 20}},
+            ),
+            "Philly 108 Mixed Nodes": ClusterSpec(
+                gpu_types={"v100": 36, "p100": 36, "k80": 36},
+                gpus_per_node={
+                    "v100": {"8": 3, "4": 3},
+                    "p100": {"4": 5, "2": 8},
+                    "k80": {"2": 8, "1": 20},
+                },
+            ),
+            "Demo 504": ClusterSpec(
+                gpu_types={"v100": 200, "p100": 180, "k80": 124},
+                gpus_per_node={
+                    "v100": {"8": 15, "4": 10},
+                    "p100": {"8": 10, "4": 15, "2": 10},
+                    "k80": {"4": 10, "2": 16, "1": 20},
+                },
+            ),
         }
 
     # ---------------------------------------------------------------
@@ -367,12 +391,20 @@ class GavelSimulator(Simulator):
         log_level_str = config.get("log_level", "WARNING")
         log_level = getattr(logging, log_level_str, logging.WARNING)
 
-        # num_gpus_per_server: convert int to per-type dict (Gavel convention).
+        # num_gpus_per_server: convert to Gavel convention.
+        # - int: uniform node size -> {"type": int} for each type
+        # - dict: nested per-type node size distributions (Cluster H style)
+        #   e.g. {"generic": {"8": 462, "4": 310, "2": 228, "1": 200}}
         num_gpus_per_server = None
         if gpus_per_node is not None:
-            num_gpus_per_server = {
-                wt: gpus_per_node for wt in cluster_spec
-            }
+            if isinstance(gpus_per_node, dict):
+                # Nested dict: per-type node size distributions
+                num_gpus_per_server = gpus_per_node
+            else:
+                # Single int: uniform node size across all types
+                num_gpus_per_server = {
+                    wt: gpus_per_node for wt in cluster_spec
+                }
 
         # ----------------------------------------------------------
         # 4. Select throughputs file
@@ -614,6 +646,8 @@ class GavelSimulator(Simulator):
 
         The config can specify either ``cluster_spec`` directly (a dict of
         gpu_type -> count) or ``cluster_preset`` (a named preset).
+        When a preset is used, its ``gpus_per_node`` is injected into config
+        if not already set.
         """
         if "cluster_spec" in config:
             return config["cluster_spec"]
@@ -627,6 +661,9 @@ class GavelSimulator(Simulator):
                     f"Unknown cluster preset '{preset_name}'. "
                     f"Available: {list(presets.keys())}"
                 )
+            # Inject preset's gpus_per_node if config doesn't override it.
+            if "gpus_per_node" not in config and preset.gpus_per_node is not None:
+                config["gpus_per_node"] = preset.gpus_per_node
             return preset.gpu_types
 
         # Default to Philly 108.

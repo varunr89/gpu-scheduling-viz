@@ -6,7 +6,7 @@ from typing import Union
 @dataclass
 class ClusterSpec:
     gpu_types: dict[str, int]        # {"v100": 36, "p100": 36}
-    gpus_per_node: int | None = None # None = flat (1 GPU = 1 node)
+    gpus_per_node: int | dict[str, int] | None = None  # int = uniform, dict = per-type, None = flat
 
     @property
     def total_gpus(self) -> int:

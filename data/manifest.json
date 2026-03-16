@@ -12644,6 +12644,81 @@
       },
       "rounds": 1001,
       "complete": true
+    },
+    {
+      "file": "workbench_e2e7111a.viz.bin",
+      "label": "Workbench | Baseline | max_min_fairness",
+      "filters": {
+        "source": "workbench",
+        "policy": "max_min_fairness"
+      },
+      "rounds": 0,
+      "complete": true
+    },
+    {
+      "file": "workbench_c6f5d021.viz.bin",
+      "label": "Workbench | Gavel | max_min_fairness_perf",
+      "filters": {
+        "source": "workbench",
+        "policy": "max_min_fairness_perf"
+      },
+      "rounds": 0,
+      "complete": true
+    },
+    {
+      "file": "workbench_dd483bcd.viz.bin",
+      "label": "Workbench | Gavel+FGD | max_min_fairness_perf",
+      "filters": {
+        "source": "workbench",
+        "policy": "max_min_fairness_perf"
+      },
+      "rounds": 0,
+      "complete": true
+    },
+    {
+      "file": "workbench_61ed9405.viz.bin",
+      "label": "Demo | Custom 504 | Baseline (MMF agnostic) | 7jph | s0",
+      "filters": {
+        "date": "2026-03-15",
+        "trace": "demo-504",
+        "figure": "demo",
+        "scheduler": "baseline",
+        "placement": "random",
+        "load": "7jph",
+        "seed": "s0"
+      },
+      "rounds": 0,
+      "complete": true
+    },
+    {
+      "file": "workbench_b133e1bf.viz.bin",
+      "label": "Demo | Custom 504 | Gavel (MMF perf) | 7jph | s0",
+      "filters": {
+        "date": "2026-03-15",
+        "trace": "demo-504",
+        "figure": "demo",
+        "scheduler": "gavel",
+        "placement": "random",
+        "load": "7jph",
+        "seed": "s0"
+      },
+      "rounds": 0,
+      "complete": true
+    },
+    {
+      "file": "workbench_a62ffa77.viz.bin",
+      "label": "Demo | Custom 504 | Gavel+FGD (MMF perf + FGD) | 7jph | s0",
+      "filters": {
+        "date": "2026-03-15",
+        "trace": "demo-504",
+        "figure": "demo",
+        "scheduler": "gavel-fgd",
+        "placement": "fgd",
+        "load": "7jph",
+        "seed": "s0"
+      },
+      "rounds": 0,
+      "complete": true
     }
   ],
   "results": {

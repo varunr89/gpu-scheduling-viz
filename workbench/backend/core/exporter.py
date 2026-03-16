@@ -370,6 +370,17 @@ _CLUSTER_PRESETS = {
         {"name": "V100M16", "count": 192},
         {"name": "V100M32", "count": 200},
     ],
+    "Demo 504": [
+        {"name": "k80", "count": 124},
+        {"name": "p100", "count": 180},
+        {"name": "v100", "count": 200},
+    ],
+    "Cluster H 5592": [
+        {"name": "generic", "count": 5592},
+    ],
+    "Cluster H 560": [
+        {"name": "generic", "count": 560},
+    ],
 }
 
 

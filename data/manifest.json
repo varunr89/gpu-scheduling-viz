@@ -12646,59 +12646,13 @@
       "complete": true
     },
     {
-      "file": "workbench_e2e7111a.viz.bin",
-      "label": "Demo | Custom 504 | Baseline (MMF agnostic) | 7jph | s0 | run2",
+      "file": "workbench_baseline_v2.viz.bin",
+      "label": "2026-03-16 | demo-504 | Baseline (Type-Agnostic) | 7jph | s0",
       "filters": {
-        "date": "2026-03-15",
+        "date": "2026-03-16",
         "trace": "demo-504",
         "figure": "demo",
         "scheduler": "baseline",
-        "placement": "random",
-        "load": "7jph",
-        "seed": "s0"
-      },
-      "rounds": 9897,
-      "complete": true
-    },
-    {
-      "file": "workbench_c6f5d021.viz.bin",
-      "label": "Demo | Custom 504 | Gavel (MMF perf) | 7jph | s0 | run2",
-      "filters": {
-        "date": "2026-03-15",
-        "trace": "demo-504",
-        "figure": "demo",
-        "scheduler": "gavel",
-        "placement": "random",
-        "load": "7jph",
-        "seed": "s0"
-      },
-      "rounds": 10315,
-      "complete": true
-    },
-    {
-      "file": "workbench_dd483bcd.viz.bin",
-      "label": "Demo | Custom 504 | Gavel+FGD (MMF perf + FGD) | 7jph | s0 | run2",
-      "filters": {
-        "date": "2026-03-15",
-        "trace": "demo-504",
-        "figure": "demo",
-        "scheduler": "gavel-fgd",
-        "placement": "fgd",
-        "load": "7jph",
-        "seed": "s0"
-      },
-      "rounds": 10710,
-      "complete": true
-    },
-    {
-      "file": "workbench_61ed9405.viz.bin",
-      "label": "Demo | Custom 504 | Baseline (MMF agnostic) | 7jph | s0",
-      "filters": {
-        "date": "2026-03-15",
-        "trace": "demo-504",
-        "figure": "demo",
-        "scheduler": "baseline",
-        "placement": "random",
         "load": "7jph",
         "seed": "s0"
       },
@@ -12707,13 +12661,12 @@
     },
     {
       "file": "workbench_b133e1bf.viz.bin",
-      "label": "Demo | Custom 504 | Gavel (MMF perf) | 7jph | s0",
+      "label": "2026-03-16 | demo-504 | Gavel (Heterogeneity-Aware) | 7jph | s0",
       "filters": {
-        "date": "2026-03-15",
+        "date": "2026-03-16",
         "trace": "demo-504",
         "figure": "demo",
         "scheduler": "gavel",
-        "placement": "random",
         "load": "7jph",
         "seed": "s0"
       },
@@ -12722,58 +12675,12 @@
     },
     {
       "file": "workbench_a62ffa77.viz.bin",
-      "label": "Demo | Custom 504 | Gavel+FGD (MMF perf + FGD) | 7jph | s0",
+      "label": "2026-03-16 | demo-504 | Gavel+FGD (Full System) | 7jph | s0",
       "filters": {
-        "date": "2026-03-15",
+        "date": "2026-03-16",
         "trace": "demo-504",
         "figure": "demo",
         "scheduler": "gavel-fgd",
-        "placement": "fgd",
-        "load": "7jph",
-        "seed": "s0"
-      },
-      "rounds": 10710,
-      "complete": true
-    },
-    {
-      "file": "workbench_b533d779.viz.bin",
-      "label": "Demo | Custom 504 | Baseline (MMF agnostic) | 7jph | s0 | run3",
-      "filters": {
-        "date": "2026-03-15",
-        "trace": "demo-504",
-        "figure": "demo",
-        "scheduler": "baseline",
-        "placement": "random",
-        "load": "7jph",
-        "seed": "s0"
-      },
-      "rounds": 9897,
-      "complete": true
-    },
-    {
-      "file": "workbench_00b986af.viz.bin",
-      "label": "Demo | Custom 504 | Gavel (MMF perf) | 7jph | s0 | run3",
-      "filters": {
-        "date": "2026-03-15",
-        "trace": "demo-504",
-        "figure": "demo",
-        "scheduler": "gavel",
-        "placement": "random",
-        "load": "7jph",
-        "seed": "s0"
-      },
-      "rounds": 10315,
-      "complete": true
-    },
-    {
-      "file": "workbench_e319a507.viz.bin",
-      "label": "Demo | Custom 504 | Gavel+FGD (MMF perf + FGD) | 7jph | s0 | run3",
-      "filters": {
-        "date": "2026-03-15",
-        "trace": "demo-504",
-        "figure": "demo",
-        "scheduler": "gavel-fgd",
-        "placement": "fgd",
         "load": "7jph",
         "seed": "s0"
       },

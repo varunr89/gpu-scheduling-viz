@@ -76,10 +76,17 @@ class Exporter:
             round_events, config, total_gpus
         )
 
-        # 5. Build jobs list from allocation data
-        jobs = self._build_jobs(round_events, total_gpus)
+        # 5. Build jobs list from allocation data (also discovers job types)
+        jobs, job_type_names = self._build_jobs(round_events, total_gpus)
 
-        # 6. Write .viz.bin
+        # 6. Update config with discovered job types if any
+        if job_type_names:
+            config["job_types"] = [
+                {"id": tid, "name": name, "category": "model"}
+                for name, tid in sorted(job_type_names.items(), key=lambda x: x[1])
+            ]
+
+        # 7. Write .viz.bin
         short_id = experiment_id[:8]
         filename = f"workbench_{short_id}.viz.bin"
         output_path = self.viz_data_dir / filename
@@ -292,14 +299,22 @@ class Exporter:
     ) -> List[dict]:
         """Reconstruct job metadata from allocation history.
 
-        We track the first round a job appears in allocations
-        (arrival_round) and the last round (completion_round).
+        We track the first round a job appears (arrival_round),
+        the last round (completion_round), and compute duration
+        from simulated time.
         """
-        # job_id -> {first_seen_round, last_seen_round, num_gpus}
+        # Build round -> sim_time map for duration computation.
+        round_to_time: Dict[int, float] = {}
+        # job_id -> {first_seen_round, last_seen_round, num_gpus, job_type}
         job_info: Dict[int, Dict[str, Any]] = {}
+        # Collect unique job types for type_id mapping.
+        job_type_names: Dict[str, int] = {}  # name -> type_id
 
         for evt in round_events:
             round_num = evt.get("round_num", 0)
+            sim_time = evt.get("elapsed_time", 0.0)
+            round_to_time[round_num] = sim_time
+
             alloc_map = evt.get("allocations", {})
             for job_id_str, gpu_indices in alloc_map.items():
                 job_id = int(job_id_str)
@@ -308,11 +323,30 @@ class Exporter:
                         "first_seen": round_num,
                         "last_seen": round_num,
                         "num_gpus": len(gpu_indices),
+                        "job_type": None,
                     }
                 else:
                     info = job_info[job_id]
                     info["last_seen"] = round_num
                     info["num_gpus"] = max(info["num_gpus"], len(gpu_indices))
+
+            # Extract job type from job_type_map if available.
+            jtm = evt.get("metrics", {}).get("job_type_map", {})
+            for jid_str, jtype in jtm.items():
+                jid = int(jid_str)
+                if jid in job_info and job_info[jid]["job_type"] is None:
+                    job_info[jid]["job_type"] = jtype
+                    if jtype not in job_type_names:
+                        job_type_names[jtype] = len(job_type_names)
+
+            # Also extract from completions.
+            for c in evt.get("metrics", {}).get("completions", []):
+                jid = c.get("id")
+                jtype = c.get("job_type")
+                if jid is not None and jtype and jid in job_info:
+                    job_info[jid]["job_type"] = jtype
+                    if jtype not in job_type_names:
+                        job_type_names[jtype] = len(job_type_names)
 
             # Also track jobs that appear only in queues.
             for job_id in evt.get("queue", []):
@@ -322,19 +356,26 @@ class Exporter:
                         "first_seen": round_num,
                         "last_seen": 0,
                         "num_gpus": 0,
+                        "job_type": None,
                     }
 
         jobs: List[dict] = []
         for job_id, info in sorted(job_info.items()):
+            # Compute duration from sim_time difference.
+            t_start = round_to_time.get(info["first_seen"], 0.0)
+            t_end = round_to_time.get(info["last_seen"], 0.0)
+            duration = max(0.0, t_end - t_start)
+            jtype = info.get("job_type")
+            type_id = job_type_names.get(jtype, 0) if jtype else 0
             jobs.append({
                 "job_id": job_id,
-                "type_id": 0,
+                "type_id": type_id,
                 "scale_factor": max(1, info["num_gpus"]),
                 "arrival_round": info["first_seen"],
                 "completion_round": info["last_seen"],
-                "duration": 0.0,
+                "duration": duration,
             })
-        return jobs
+        return jobs, job_type_names
 
     # ------------------------------------------------------------------
     # Manifest reading

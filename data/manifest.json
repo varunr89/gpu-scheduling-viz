@@ -12646,13 +12646,14 @@
       "complete": true
     },
     {
-      "file": "workbench_baseline_v2.viz.bin",
+      "file": "workbench_065278e0.viz.bin",
       "label": "2026-03-16 | demo-504 | Baseline (Type-Agnostic) | 7jph | s0",
       "filters": {
         "date": "2026-03-16",
         "trace": "demo-504",
         "figure": "demo",
         "scheduler": "baseline",
+        "placement": "random",
         "load": "7jph",
         "seed": "s0"
       },
@@ -12660,13 +12661,14 @@
       "complete": true
     },
     {
-      "file": "workbench_b133e1bf.viz.bin",
+      "file": "workbench_b5238f33.viz.bin",
       "label": "2026-03-16 | demo-504 | Gavel (Heterogeneity-Aware) | 7jph | s0",
       "filters": {
         "date": "2026-03-16",
         "trace": "demo-504",
         "figure": "demo",
         "scheduler": "gavel",
+        "placement": "random",
         "load": "7jph",
         "seed": "s0"
       },
@@ -12674,13 +12676,14 @@
       "complete": true
     },
     {
-      "file": "workbench_a62ffa77.viz.bin",
+      "file": "workbench_f1ca1878.viz.bin",
       "label": "2026-03-16 | demo-504 | Gavel+FGD (Full System) | 7jph | s0",
       "filters": {
         "date": "2026-03-16",
         "trace": "demo-504",
         "figure": "demo",
         "scheduler": "gavel-fgd",
+        "placement": "fgd",
         "load": "7jph",
         "seed": "s0"
       },

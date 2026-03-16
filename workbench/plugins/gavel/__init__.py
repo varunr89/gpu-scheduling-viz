@@ -507,6 +507,7 @@ class GavelSimulator(Simulator):
                     "completions": metrics_dict.get("completions_this_round", []),
                     "arrivals_count": metrics_dict.get("arrivals_this_round", 0),
                     "pending_demand": pending_demand,
+                    "job_type_map": metrics_dict.get("job_type_map", {}),
                 },
             ))
 
